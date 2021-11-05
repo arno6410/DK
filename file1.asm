@@ -5,41 +5,52 @@ ASSUME cs:_TEXT, ds:FLAT, es:FLAT, fs:FLAT, gs:FLAT
 
 CODESEG
 
+; Set the video mode
+PROC setVideoMode
+	ARG @@mode: byte
+	USES eax
+
+	movzx ax,[@@mode]
+	int 10h
+
+	ret
+ENDP setVideoMode
+
+PROC waitForSpecificKeystroke
+	ARG @@key: byte
+	USES eax
+	
+@@wait:
+	mov ah, 00h
+	int 16h
+	cmp al, [@@key]
+	jne @@wait
+	
+	ret
+ENDP waitForSpecificKeystroke
+
+
+PROC terminateProcess
+	USES eax
+	
+	call setVideoMode, 03h
+	mov	ax, 04C00h
+	int 21h
+	
+	ret
+ENDP terminateProcess
+
 PROC main
 	sti
 	cld
 	
-	; the number to be printed
-	mov eax, 50000329
-	mov ebx, 10
-	xor ecx, ecx
+	push ds
+	pop ds
 	
-getNextDigit:
-	inc ecx
-	xor edx, edx
-	div ebx
-	push dx
-	test eax, eax
-	jnz getNextDigit
+	call setVideoMode, 13h
 	
-	mov ah, 2h
-printDigits:
-	pop dx
-	add dl, '0'
-	int 21h
-	loop printDigits
-	
-	; \r\n
-	mov dl, 0Dh
-	int 21h
-	mov dl, 0Ah
-	int 21h
-	
-	; terminate the program
-	mov ah, 4Ch
-    mov al, 00h
-    int 21h
-	
+	call waitForSpecificKeystroke, 1Bh
+	call terminateProcess
 ENDP main	
 
 DATASEG
