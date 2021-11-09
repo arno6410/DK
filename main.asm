@@ -23,7 +23,7 @@ PROC main
 	
 	call setVideoMode, 13h
 	
-	call fillRect, 60, 60, 60, 60, 25h
+	call fillRect, 0, 180, 320, 200, 25h
 	
 	; exit on esc
 	call waitForSpecificKeystroke, 1Bh

@@ -11,7 +11,6 @@ CODESEG
 
 INCLUDE "utils.inc"
 
-
 ; Set the video mode
 PROC setVideoMode
 	ARG @@mode: byte
