@@ -9,41 +9,6 @@ SCRHEIGHT EQU 200	; screen height
 
 CODESEG
 
-; Set the video mode
-PROC setVideoMode
-	ARG @@mode: byte
-	USES eax
-
-	movzx ax,[@@mode]
-	int 10h
-
-	ret
-ENDP setVideoMode
-
-PROC waitForSpecificKeystroke
-	ARG @@key: byte
-	USES eax
-	
-@@wait:
-	mov ah, 00h
-	int 16h
-	cmp al, [@@key]
-	jne @@wait
-	
-	ret
-ENDP waitForSpecificKeystroke
-
-
-PROC terminateProcess
-	USES eax
-	
-	call setVideoMode, 03h
-	mov	ax, 04C00h
-	int 21h
-	
-	ret
-ENDP terminateProcess
-
 ; Draw a filled rectangle
 PROC fillRect
 	ARG @@x0: word, @@y0: word, @@w: word, @@h: word, @@col: byte
@@ -81,7 +46,7 @@ PROC main
 	
 	call setVideoMode, 13h
 	
-	call fillRect, 60, 60, 60, 60, 5
+	call fillRect, 60, 60, 60, 60, 25h
 	
 	; exit on esc
 	call waitForSpecificKeystroke, 1Bh
