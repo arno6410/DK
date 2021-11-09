@@ -9,6 +9,9 @@ SCRHEIGHT EQU 200	; screen height
 
 CODESEG
 
+INCLUDE "utils.inc"
+
+
 ; Set the video mode
 PROC setVideoMode
 	ARG @@mode: byte
@@ -47,4 +50,4 @@ DATASEG
 	
 STACK 100h
 
-END main
+END 
