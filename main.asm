@@ -12,6 +12,9 @@ FRAMESIZE EQU 256	; mario size (16x16)
 
 CODESEG
 
+INCLUDE "utils.inc"
+INCLUDE "rect.inc"
+
 STRUC character
 	x		dd 0		; x position
 	y		dd 0		; y position
@@ -19,32 +22,24 @@ STRUC character
 	speed_y	dd 0		; y speedcomponent
 ENDS character
 
-INCLUDE "utils.inc"
-INCLUDE "rect.inc"
-
 PROC main
 	sti
 	cld
 	
-	;push ds
-	;pop es
+	push ds
+	pop es
 	
-	;mov ebx, [offset testing]
-	call printUnsignedInteger, 32
+	call setVideoMode, 13h
 	
-	;call setVideoMode, 13h
-	
-	;call fillRect, 0, 180, 320, 200, 25h
-	;mov ebx, offset mario
-	;call fillRect, [ebx+mario.x], 150, 20, 30, 33h
+	call fillRect, 0, 180, 320, 200, 25h
+	call fillRect, [mario.x], 150, 20, 30, 33h
 	
 	; exit on esc
-	;call waitForSpecificKeystroke, 1Bh
-	;call terminateProcess
+	call waitForSpecificKeystroke, 1Bh
+	call terminateProcess
 ENDP main	
 
 DATASEG
-	testing db 64
 	mario character <30,150,0,0>
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'

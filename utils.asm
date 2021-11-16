@@ -46,27 +46,34 @@ PROC terminateProcess
 ENDP terminateProcess	
 
 PROC printUnsignedInteger
-	ARG @@printval:dword
+	ARG @@number: dword
 	USES eax, ebx, ecx, edx
 	
-	mov eax, [@@printval]
-	mov ebx, 10  	; divider
-	xor ecx, ecx 	; counter for digits to be printed
+	; the number to be printed
+	mov eax, [@@number]
+	mov ebx, 10
+	xor ecx, ecx
 	
 @@getNextDigit:
 	inc ecx
 	xor edx, edx
 	div ebx
-	push dx			; store remainder on stack
-	test eax, eax 	; check whether zero
+	push dx
+	test eax, eax
 	jnz @@getNextDigit
 	
 	mov ah, 2h
 @@printDigits:
 	pop dx
-	add dl,'0'
+	add dl, '0'
 	int 21h
 	loop @@printDigits
+	
+	; \r\n
+;	mov dl, 0Dh
+;	int 21h
+;	mov dl, 0Ah
+;	int 21h
 	
 	ret
 ENDP printUnsignedInteger
