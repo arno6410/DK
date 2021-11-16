@@ -45,6 +45,32 @@ PROC terminateProcess
 	ret
 ENDP terminateProcess	
 
+PROC printUnsignedInteger
+	ARG @@printval:dword
+	USES eax, ebx, ecx, edx
+	
+	mov eax, [@@printval]
+	mov ebx, 10  	; divider
+	xor ecx, ecx 	; counter for digits to be printed
+	
+@@getNextDigit:
+	inc ecx
+	xor edx, edx
+	div ebx
+	push dx			; store remainder on stack
+	test eax, eax 	; check whether zero
+	jnz @@getNextDigit
+	
+	mov ah, 2h
+@@printDigits:
+	pop dx
+	add dl,'0'
+	int 21h
+	loop @@printDigits
+	
+	ret
+ENDP printUnsignedInteger
+
 DATASEG
 	
 STACK 100h
