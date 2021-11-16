@@ -78,6 +78,26 @@ PROC printUnsignedInteger
 	ret
 ENDP printUnsignedInteger
 
+; wait for @@framecount frames
+proc wait_VBLANK
+	ARG @@framecount: word
+	USES eax, ecx, edx
+	mov dx, 03dah 					; Wait for screen refresh
+	movzx ecx, [@@framecount]
+	
+		@@VBlank_phase1:
+		in al, dx 
+		and al, 8
+		jnz @@VBlank_phase1
+		@@VBlank_phase2:
+		in al, dx 
+		and al, 8
+		jz @@VBlank_phase2
+	loop @@VBlank_phase1
+	
+	ret 
+endp wait_VBLANK
+
 DATASEG
 	
 STACK 100h
