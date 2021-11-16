@@ -82,10 +82,6 @@ PROC main
 	
 	push ds
 	pop	es
-
-	call	setVideoMode,13h
-	call	updateColourPalette, 3
-	; call	drawKeyboard
 	
 	call __keyb_installKeyboardHandler
 		
