@@ -32,7 +32,15 @@ PROC main
 	call setVideoMode, 13h
 	
 	call fillRect, 0, 180, 320, 200, 25h
-	call fillRect, [mario.x], 150, 20, 30, 33h
+	
+mainloop:
+	call fillRect, ebx, 150, 20, 30, 0h
+	mov ebx, [mario.x]
+	call fillRect, ebx, 150, 20, 30, 33h
+	mov eax, [mario.speed_x]
+	add [mario.x], eax
+	call wait_VBLANK, 3
+	jmp mainloop
 	
 	; exit on esc
 	call waitForSpecificKeystroke, 1Bh
@@ -40,7 +48,7 @@ PROC main
 ENDP main	
 
 DATASEG
-	mario character <30,150,0,0>
+	mario character <30,150,1,1>
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
