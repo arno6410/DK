@@ -56,30 +56,21 @@ mainloop:
 
 	mov ebx, [offset __keyb_keyboardState + 4Dh] ;right
 	cmp ebx, 1
-	je rightlbl
+	jne noRight
+	add [mario.x], 2
+noRight:	
 	
 	mov ebx, [offset __keyb_keyboardState + 4Bh] ;left
 	cmp ebx, 1
-	je leftlbl
+	jne noLeft
+	sub [mario.x], 2
+noLeft:
 	
 	mov ebx, [offset __keyb_keyboardState + 48h] ;up
 	cmp ebx, 1
-	je uplbl
-	
-	jmp endlbl
-	;shl ebx, 3
-	;jmp [jump_table + ebx]
-	
-uplbl:
-	;mov [mario.speed_y], -11
-	jmp endlbl
-leftlbl: 
-	sub [mario.x], 2	
-	jmp endlbl	
-rightlbl:
-	add [mario.x], 2
-	jmp endlbl		
-endlbl:
+	jne noUp
+	mov [mario.speed_y], -11
+noUp:
 	
 	; draw and update mario
 	mov eax, [mario.x]
@@ -97,13 +88,13 @@ endlbl:
 	pop ecx
 noJump:
 	; gravity
-;	inc [mario.speed_y]
+	inc [mario.speed_y]
 	
 	; test for collision
-	;cmp [mario.y], 150
-;	jle noCollision
-;	mov [mario.speed_y], 0
-;	mov [mario.y], 150
+	cmp [mario.y], 150
+	jle noCollision
+	mov [mario.speed_y], 0
+	mov [mario.y], 150
 noCollision:
 	inc ecx
 	jmp mainloop
