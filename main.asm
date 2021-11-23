@@ -55,17 +55,29 @@ mainloop:
 	
 
 	mov ebx, [offset __keyb_keyboardState + 4Dh] ;right
-	shl ebx, 3
-	jmp [jump_table + ebx]
+	cmp ebx, 1
+	je rightlbl
+	
+	mov ebx, [offset __keyb_keyboardState + 4Bh] ;left
+	cmp ebx, 1
+	je leftlbl
+	
+	mov ebx, [offset __keyb_keyboardState + 48h] ;up
+	cmp ebx, 1
+	je uplbl
+	
+	jmp endlbl
+	;shl ebx, 3
+	;jmp [jump_table + ebx]
 	
 uplbl:
-	mov [mario.speed_y], -11
+	;mov [mario.speed_y], -11
 	jmp endlbl
 leftlbl: 
-	dec [mario.x]	
+	sub [mario.x], 2	
 	jmp endlbl	
 rightlbl:
-	inc [mario.x]
+	add [mario.x], 2
 	jmp endlbl		
 endlbl:
 	
