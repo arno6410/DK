@@ -85,11 +85,11 @@ proc wait_VBLANK
 	mov dx, 03dah 					; Wait for screen refresh
 	movzx ecx, [@@framecount]
 	
-		@@VBlank_phase1:
+	@@VBlank_phase1:
 		in al, dx 
 		and al, 8
 		jnz @@VBlank_phase1
-		@@VBlank_phase2:
+	@@VBlank_phase2:
 		in al, dx 
 		and al, 8
 		jz @@VBlank_phase2
