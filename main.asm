@@ -53,6 +53,10 @@ PROC main
 mainloop:
 	push ecx
 	
+	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
+	cmp ebx, 1
+	je exit
+	
 
 	mov ebx, [offset __keyb_keyboardState + 4Dh] ;right
 	cmp ebx, 1
@@ -99,15 +103,18 @@ noCollision:
 	inc ecx
 	jmp mainloop
 	
-	; exit on esc
-	call waitForSpecificKeystroke, 1Bh
+exit:
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
+	
+	; exit on esc
+	;call waitForSpecificKeystroke, 1Bh
+	;call __keyb_uninstallKeyboardHandler
+	;call terminateProcess
 ENDP main	
 
 DATASEG
 	mario character <30,150,0,0>
-	jump_table  dd uplbl, leftlbl, rightlbl, endlbl
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
