@@ -20,6 +20,8 @@ STRUC character
 	y		dd 0		; y position
 	speed_x	dd 0		; x speedcomponent
 	speed_y	dd 0		; y speedcomponent
+	w		dd 0		; width
+	h 		dd 0		; height
 ENDS character
 
 PROC main
@@ -33,7 +35,7 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 	call fillRect, 0, 180, 320, 200, 25h
-	call fillRect, [mario.x], [mario.y], 20, 30, 33h
+	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 33h
 	
 	; ecx acts as the loop counter
 	mov ecx, 0
@@ -59,13 +61,13 @@ noRight:
 	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
 	cmp ebx, 1
 	jne noUp
-	mov [mario.speed_y], -11
+	mov [mario.speed_y], -7
 	
 noUp:
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
-	call fillRect, eax, ebx, 20, 30, 33h
+	call fillRect, eax, ebx, [mario.w], [mario.h], 33h
 	mov ecx, [mario.speed_x]
 	add [mario.x], ecx
 	mov edx, [mario.speed_y]
@@ -74,7 +76,7 @@ noUp:
 	call wait_VBLANK, 3
 	
 	; undraw mario
-	call fillRect, eax, ebx, 20, 30, 0h
+	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
 	
 	pop ecx
 noJump:
@@ -82,10 +84,10 @@ noJump:
 	inc [mario.speed_y]
 	
 	; test for collision
-	cmp [mario.y], 150
+	cmp [mario.y], 160
 	jle noCollision
 	mov [mario.speed_y], 0
-	mov [mario.y], 150
+	mov [mario.y], 160
 	
 noCollision:
 	inc ecx
@@ -98,7 +100,7 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <30,150,0,0>
+	mario character <30,160,0,0,15,20>
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
