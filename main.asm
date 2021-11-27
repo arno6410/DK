@@ -16,12 +16,13 @@ INCLUDE "rect.inc"
 INCLUDE "keyb.inc"
 
 STRUC character
-	x		dd 0		; x position
-	y		dd 0		; y position
-	speed_x	dd 0		; x speedcomponent
-	speed_y	dd 0		; y speedcomponent
-	w		dd 0		; width
-	h 		dd 0		; height
+	x			dd 0		; x position
+	y			dd 0		; y position
+	speed_x		dd 0		; x speedcomponent
+	speed_y		dd 0		; y speedcomponent
+	w			dd 0		; width
+	h 			dd 0		; height
+	in_the_air	dd 0		; is mario currently in the air
 ENDS character
 
 PROC main
@@ -58,10 +59,16 @@ noLeft:
 	add [mario.x], 2
 	
 noRight:
+	mov ebx, [mario.speed_y]
+	or ebx, [mario.in_the_air] ; prevents from jumping again at the top of the arc
+	cmp ebx, 0
+	jne noUp
+	
 	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
 	cmp ebx, 1
 	jne noUp
 	mov [mario.speed_y], -7
+	mov [mario.in_the_air], 1
 	
 noUp:
 	; draw and update mario
@@ -87,6 +94,7 @@ noJump:
 	cmp [mario.y], 160
 	jle noCollision
 	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
 	mov [mario.y], 160
 	
 noCollision:
