@@ -22,19 +22,6 @@ STRUC character
 	speed_y	dd 0		; y speedcomponent
 ENDS character
 
-; draw Mario
-PROC drawMario
-	USES eax, ebx, ecx, edi	
-	mov ecx, KEYCNT	; amount of keys to process
-	
-	call fillRect, [mario.x], [mario.y], 20, 30, 33h
-	
-@@loopkeys:	
-	
-	
-	ret
-ENDP drawMario
-
 PROC main
 	sti
 	cld
@@ -57,25 +44,24 @@ mainloop:
 	cmp ebx, 1
 	je exit
 	
-
-	mov ebx, [offset __keyb_keyboardState + 4Dh] ;right
-	cmp ebx, 1
-	jne noRight
-	add [mario.x], 2
-noRight:	
-	
-	mov ebx, [offset __keyb_keyboardState + 4Bh] ;left
+	mov ebx, [offset __keyb_keyboardState + 1Eh] ;Q
 	cmp ebx, 1
 	jne noLeft
 	sub [mario.x], 2
-noLeft:
 	
-	mov ebx, [offset __keyb_keyboardState + 48h] ;up
+noLeft:	
+	mov ebx, [offset __keyb_keyboardState + 20h] ;D
+	cmp ebx, 1
+	jne noRight
+	add [mario.x], 2
+	
+noRight:
+	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
 	cmp ebx, 1
 	jne noUp
 	mov [mario.speed_y], -11
-noUp:
 	
+noUp:
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
@@ -86,6 +72,7 @@ noUp:
 	add [mario.y], edx
 	
 	call wait_VBLANK, 3
+	
 	; undraw mario
 	call fillRect, eax, ebx, 20, 30, 0h
 	
@@ -99,18 +86,15 @@ noJump:
 	jle noCollision
 	mov [mario.speed_y], 0
 	mov [mario.y], 150
+	
 noCollision:
 	inc ecx
 	jmp mainloop
 	
 exit:
+	; exit on esc
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
-	
-	; exit on esc
-	;call waitForSpecificKeystroke, 1Bh
-	;call __keyb_uninstallKeyboardHandler
-	;call terminateProcess
 ENDP main	
 
 DATASEG
