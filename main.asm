@@ -107,7 +107,6 @@ ENDP main
 
 DATASEG
 	mario character <30,150,0,0>
-	jump_table  dd uplbl, leftlbl, rightlbl, endlbl
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
