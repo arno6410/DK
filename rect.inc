@@ -1,1 +1,2 @@
-GLOBAL 	fillRect:PROC
+GLOBAL 	fillRect:PROC, \
+	drawRects:PROC
