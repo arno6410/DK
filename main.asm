@@ -4,7 +4,7 @@ MODEL FLAT, C
 ASSUME cs:_TEXT, ds:FLAT, es:FLAT, fs:FLAT, gs:FLAT
 
 VMEMADR EQU 0A0000h	; video memory address
-SCRWIDTH EQU 320	; screen width
+SCRWIDTH EQU 320	; screen witdth
 SCRHEIGHT EQU 200	; screen height
 FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
@@ -22,8 +22,41 @@ STRUC character
 	speed_y		dd 0		; y speedcomponent
 	w			dd 0		; width
 	h 			dd 0		; height
+	color 		dd 0		; color
 	in_the_air	dd 0		; is mario currently in the air
 ENDS character
+
+STRUC platform
+	x 			dd 0		; x position
+	y			dd 0		; y position
+	w			dd 0		; width
+	h			dd 0		; height
+	color		dd 0		; color
+ENDS platform
+
+
+PROC checkCollision
+	mov eax, [ground2.x]
+	mov ebx, [mario.x]
+	add ebx, [mario.w]
+	cmp eax, ebx
+	jg noOverlap
+	
+	mov eax, [mario.x]
+	mov ebx, [ground2.x]
+	add ebx, [ground2.w]
+	cmp eax, ebx
+	jg noOverlap
+xOverlap:
+	mov [mario.color], 07h
+	jmp endProcedure
+noOverlap:
+	mov [mario.color], 33h
+	jmp endProcedure
+endProcedure:
+	ret
+ENDP checkCollision
+
 
 PROC main
 	sti
@@ -35,14 +68,20 @@ PROC main
 	call setVideoMode, 13h
 	call __keyb_installKeyboardHandler
 	
-	;call fillRect, 30, 160, SCRWIDTH-60, 20, 25h
-	call drawRects ; zie rect.asm
-	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 33h
+	call fillRect, [ground.x], [ground.y], [ground.w], [ground.h], [ground.color]
+	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
+	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], [mario.color]
 	
 	; ecx acts as the loop counter
 	mov ecx, 0
 mainloop:
 	push ecx
+	
+	push ebx
+	push eax
+	call checkCollision
+	pop eax
+	pop ebx
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
@@ -51,13 +90,13 @@ mainloop:
 	mov ebx, [offset __keyb_keyboardState + 1Eh] ;Q
 	cmp ebx, 1
 	jne noLeft
-	sub [mario.x], 2
+	sub [mario.x], 3
 	
 noLeft:	
 	mov ebx, [offset __keyb_keyboardState + 20h] ;D
 	cmp ebx, 1
 	jne noRight
-	add [mario.x], 2
+	add [mario.x], 3
 	
 noRight:
 	mov ebx, [mario.speed_y]
@@ -68,14 +107,14 @@ noRight:
 	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
 	cmp ebx, 1
 	jne noUp
-	mov [mario.speed_y], -7
+	mov [mario.speed_y], -8
 	mov [mario.in_the_air], 1
 	
 noUp:
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
-	call fillRect, eax, ebx, [mario.w], [mario.h], 33h
+	call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
 	mov ecx, [mario.speed_x]
 	add [mario.x], ecx
 	mov edx, [mario.speed_y]
@@ -85,6 +124,8 @@ noUp:
 	
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
+	call fillRect, [ground.x], [ground.y], [ground.w], [ground.h], [ground.color]
+	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
 	
 	pop ecx
 noJump:
@@ -109,7 +150,10 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <30,160,0,0,15,20>
+	mario character <30,160,0,0,15,20,33h>
+	ground platform <0,180,320,20,25h>
+	ground2 platform <170,100,50,80,25h>
+	;terrain	dd ground, ground2					; array that 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
