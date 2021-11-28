@@ -25,6 +25,13 @@ STRUC character
 	in_the_air	dd 0		; is mario currently in the air
 ENDS character
 
+STRUC rect
+	x	dd 0
+	y	dd 0
+	w	dd 0
+	h	dd 0
+ENDS rect
+
 PROC main
 	sti
 	cld
@@ -36,13 +43,12 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 	;call fillRect, 30, 160, SCRWIDTH-60, 20, 25h
-	call drawRects ; zie rect.asm
+;	call drawRects ; zie rect.asm
 	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 33h
 	
-	; ecx acts as the loop counter
-	mov ecx, 0
 mainloop:
-	push ecx
+	
+	call drawRects ; zie rect.asm
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
@@ -51,13 +57,13 @@ mainloop:
 	mov ebx, [offset __keyb_keyboardState + 1Eh] ;Q
 	cmp ebx, 1
 	jne noLeft
-	sub [mario.x], 2
+	sub [mario.speed_x], 2
 	
 noLeft:	
 	mov ebx, [offset __keyb_keyboardState + 20h] ;D
 	cmp ebx, 1
 	jne noRight
-	add [mario.x], 2
+	add [mario.speed_x], 2
 	
 noRight:
 	mov ebx, [mario.speed_y]
@@ -68,7 +74,7 @@ noRight:
 	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
 	cmp ebx, 1
 	jne noUp
-	mov [mario.speed_y], -7
+	mov [mario.speed_y], -6
 	mov [mario.in_the_air], 1
 	
 noUp:
@@ -85,21 +91,33 @@ noUp:
 	
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
-	
-	pop ecx
+	push eax
 noJump:
 	; gravity
 	inc [mario.speed_y]
 	
 	; test for collision
-	cmp [mario.y], 160
-	jle noCollision
+
+	call testYCollision, [mario.x], [mario.y], [mario.w], [mario.h]
+	test eax, eax
+	jz noYCollision
+	mov [mario.y], ebx ; ebx contains the old value of [mario.y]
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
-	mov [mario.y], 160
 	
-noCollision:
-	inc ecx
+noYCollision:
+	mov ebx, eax
+	call testXCollision,[mario.x], [mario.y], [mario.w], [mario.h]
+	and eax, ebx
+	test eax, eax
+	jz noXCollision
+	pop eax ; restore the old value of [mario.x]
+	mov [mario.x], eax 
+	mov [mario.speed_x], 0
+	mov [mario.in_the_air], 0
+
+noXCollision:
+	mov [mario.speed_x], 0
 	jmp mainloop
 	
 exit:
@@ -109,7 +127,7 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <30,160,0,0,15,20>
+	mario character <35,140,0,0,10,15>
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
