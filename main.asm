@@ -38,15 +38,18 @@ ENDS platform
 
 
 PROC checkCollision
+checkX:
 	mov eax, [ground2.x]
 	mov ebx, [mario.x]
-	cmp ebx, 0				; checks for the left 
-	jl xOverlap				; edge of the screen
+	cmp ebx, 0					; checks for the left 
+	jl outOfBounds				; edge of the screen
+	
 	add ebx, [mario.w]
 	cmp ebx, 320				; checks for the right 
-	jg xOverlap					; edge of the screen
+	jg outOfBounds				; edge of the screen
+	
 	cmp eax, ebx			; checks for overlap 
-	jge noXOverlap				; with blocks
+	jge noXOverlap			; with blocks
 	
 	mov eax, [mario.x]
 	mov ebx, [ground2.x]
@@ -57,22 +60,29 @@ xOverlap:
 	mov [mario.x_overlapping], 1
 	jmp checkY
 noXOverlap:
-	mov [mario.x_overlapping], 0
+	jmp endProcedure
 checkY:
-	;mov eax, [ground.y]
-	;mov ebx, [mario.y]
-	;add ebx, [mario.h]
-	;cmp eax, ebx
-	;jge endProcedure
+	mov eax, [ground2.y]
+	mov ebx, [mario.y]
+	add ebx, [mario.h]
+	cmp eax, ebx
+	jge noYOverlap
 	
-	;mov eax, [mario.x]
-	;mov ebx, [ground2.x]
-	;add ebx, [ground2.w]
-	;cmp eax, ebx
-	;jge endProcedure
+	mov eax, [mario.y]
+	mov ebx, [ground2.y]
+	add ebx, [ground2.h]
+	cmp eax, ebx
+	jge noYOverlap
 yOverlap:	
-	;mov [mario.y_overlapping], 1
-endProcedure:
+	mov [mario.y_overlapping], 1
+	jmp endProcedure
+noYOverlap:
+	mov [mario.y_overlapping], 0
+	mov [mario.x_overlapping], 0
+	jmp endProcedure
+outOfBounds:
+	mov [mario.x_overlapping], 1
+endProcedure:	
 	ret
 ENDP checkCollision
 
@@ -112,6 +122,7 @@ mainloop:
 	
 	sub [mario.x], 4
 	call checkCollision
+	mov [mario.y_overlapping], 0      
 	add [mario.x], 4
 	cmp [mario.x_overlapping], 1
 	je noLeft
@@ -119,12 +130,14 @@ mainloop:
 	sub [mario.x], 4
 	
 noLeft:	
+	mov [mario.x_overlapping], 0
 	mov ebx, [offset __keyb_keyboardState + 20h] ;D
 	cmp ebx, 1
 	jne noRight
 	
 	add [mario.x], 4
 	call checkCollision
+	mov [mario.y_overlapping], 0       
 	sub [mario.x], 4
 	cmp [mario.x_overlapping], 1
 	je noRight
@@ -166,14 +179,17 @@ noJump:
 	inc [mario.speed_y]
 	
 	; test for collision
-	cmp [mario.y], 160
+	call checkCollision
+	cmp [mario.y_overlapping], 1
 	jne noCollision
-	;cmp [mario.y_overlapping], 1
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
-	mov [mario.y], 160
+	mov ebx, [ground2.y]
+	sub ebx, [mario.h]
+	mov [mario.y], ebx
 	
 noCollision:
+	mov [mario.y_overlapping], 0
 	inc ecx
 	jmp mainloop
 	
@@ -184,9 +200,9 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <180,160,0,0,16,20,33h,0,0,0>
-	ground platform <0,180,320,20,25h>
-	ground2 platform <40,100,40,80,25h>
+	mario character <40,60,0,0,16,20,33h,0,0,0>
+	ground platform <0,100,320,20,25h>
+	ground2 platform <40,80,40,80,25h>
 	;terrain	dd ground, ground2					; array that 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
