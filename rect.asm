@@ -46,6 +46,103 @@ PROC fillRect
 	ret
 ENDP fillRect
 
+PROC drawPlatform
+	ARG @@x0: word, @@y0: word, @@x1: word, @@y1: word, @@h: word, @@col: byte
+	LOCAL @@d_x: word, @@d_y: word
+	USES eax, ebx, ecx, edx, edi
+	
+	; calculate d_x & d_y
+	movzx eax, [@@x1]
+	sub ax, [@@x0]
+	mov [@@d_x], ax
+	movzx eax, [@@y1]
+	sub ax, [@@y0]
+	mov [@@d_y], ax
+	
+; first part
+	; compute top left corner
+	movzx eax, [@@y0]
+	mov edx, SCRWIDTH
+	mul edx
+	add ax, [@@x0]
+	mov edi, VMEMADR
+	add edi, eax
+	
+	; eax contains the value d_x*(y-y0)
+	xor eax, eax
+	; ecx is the row counter
+	xor ecx, ecx
+@@loopLine:
+;		dec eax
+		; ebx contains the value d_y*(x-1-x0)
+		movzx ebx, [@@x0]
+		neg bx
+		; edx is the column counter
+		xor edx, edx
+	@@loopPixel:
+			cmp ax, bx
+			jl @@notInside
+			push eax
+			movzx eax, [@@col]
+			stosb
+			pop eax
+			jmp @@next
+			
+		@@notInside:
+			inc edi
+		@@next:
+			add bx, [@@d_y]
+			inc edx	
+		cmp dx, [@@d_x]
+		jle @@loopPixel
+		
+		; move to the next row
+		add edi, SCRWIDTH
+		sub di, [@@d_x]
+		dec edi
+		add ax, [@@d_x]
+		inc ecx
+	cmp cx, [@@h]
+	jl @@loopLine
+	
+; second part
+	movzx eax, [@@h]
+	; ecx is the row counter
+	xor ecx, ecx
+@@loopLine2:
+		; ebx contains the value d_y*(x+1-x0)
+		movzx ebx, [@@x0]
+		; edx is the column counter
+		xor edx, edx
+	@@loopPixel2:
+			cmp ax, bx
+			jg @@notInside2
+			push eax
+			movzx eax, [@@col]	
+			stosb
+			pop eax
+			jmp @@next2
+			
+		@@notInside2:
+			inc edi
+		@@next2:
+			add bx, [@@d_y]
+			inc edx	
+		cmp dx, [@@d_x]
+		jle @@loopPixel2
+		
+		; move to the next row
+		add edi, SCRWIDTH
+		sub di, [@@d_x]
+		dec edi
+		add ax, [@@d_x]
+		inc ecx
+	cmp cx, [@@d_y]
+	jl @@loopLine2
+	
+	ret
+ENDP drawPlatform
+
 ; Draws the 'fixed' rect
 PROC drawRects
 	call fillRect, [rect1.x], [rect1.y], [rect1.w], [rect1.h], 25h
