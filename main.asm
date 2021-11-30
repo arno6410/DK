@@ -38,8 +38,11 @@ ENDS platform
 
 
 PROC checkCollision
+	ARG @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+	USES eax, ebx
+
 checkX:
-	mov eax, [ground2.x]
+	mov eax, [@@x0]
 	mov ebx, [mario.x]
 	cmp ebx, 0					; checks for the left 
 	jl outOfBounds				; edge of the screen
@@ -52,8 +55,8 @@ checkX:
 	jge noXOverlap			; with blocks
 	
 	mov eax, [mario.x]
-	mov ebx, [ground2.x]
-	add ebx, [ground2.w]
+	mov ebx, [@@x0]
+	add ebx, [@@w]
 	cmp eax, ebx
 	jge noXOverlap
 xOverlap:
@@ -62,15 +65,15 @@ xOverlap:
 noXOverlap:
 	jmp endProcedure
 checkY:
-	mov eax, [ground2.y]
+	mov eax, [@@y0]
 	mov ebx, [mario.y]
 	add ebx, [mario.h]
 	cmp eax, ebx
 	jge noYOverlap
 	
 	mov eax, [mario.y]
-	mov ebx, [ground2.y]
-	add ebx, [ground2.h]
+	mov ebx, [@@y0]
+	add ebx, [@@h]
 	cmp eax, ebx
 	jge noYOverlap
 yOverlap:	
@@ -97,20 +100,16 @@ PROC main
 	call setVideoMode, 13h
 	call __keyb_installKeyboardHandler
 	
-	call fillRect, [ground.x], [ground.y], [ground.w], [ground.h], [ground.color]
+	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
+	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
+	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
 	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], [mario.color]
 	
 	; ecx acts as the loop counter
 	mov ecx, 0
 mainloop:
 	push ecx
-	
-	push ebx
-	push eax
-	call checkCollision
-	pop eax
-	pop ebx
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
@@ -121,7 +120,10 @@ mainloop:
 	jne noLeft
 	
 	sub [mario.x], 4
-	call checkCollision
+	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
+	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
+	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
 	mov [mario.y_overlapping], 0      
 	add [mario.x], 4
 	cmp [mario.x_overlapping], 1
@@ -136,7 +138,10 @@ noLeft:
 	jne noRight
 	
 	add [mario.x], 4
-	call checkCollision
+	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
+	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
+	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
 	mov [mario.y_overlapping], 0       
 	sub [mario.x], 4
 	cmp [mario.x_overlapping], 1
@@ -170,21 +175,55 @@ noUp:
 	
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
-	call fillRect, [ground.x], [ground.y], [ground.w], [ground.h], [ground.color]
+	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
+	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
+	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
 	
 	pop ecx
 noJump:
 	; gravity
 	inc [mario.speed_y]
 	
-	; test for collision
-	call checkCollision
+; check for collision	
+check1:
+	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	cmp [mario.y_overlapping], 1
+	jne check2
+	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground1.y]
+	sub ebx, [mario.h]
+	mov [mario.y], ebx
+check2:
+	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
+	cmp [mario.y_overlapping], 1
+	jne check3
+	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground2.y]
+	sub ebx, [mario.h]
+	mov [mario.y], ebx
+check3:
+	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
+	cmp [mario.y_overlapping], 1
+	jne check4
+	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground3.y]
+	sub ebx, [mario.h]
+	mov [mario.y], ebx
+check4:
+	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
 	cmp [mario.y_overlapping], 1
 	jne noCollision
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
-	mov ebx, [ground2.y]
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground4.y]
 	sub ebx, [mario.h]
 	mov [mario.y], ebx
 	
@@ -201,9 +240,12 @@ ENDP main
 
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
-	ground platform <0,100,320,20,25h>
-	ground2 platform <40,80,40,80,25h>
-	;terrain	dd ground, ground2					; array that 
+	ground1 platform <0,190,320,10,25h>
+	ground2 platform <240,165,40,5,25h>
+	ground3 platform <180,140,40,5,25h>
+	ground4 platform <120,115,40,5,25h>
+	
+	;terrain	dd ground1, ground2					; array that 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
