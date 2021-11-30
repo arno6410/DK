@@ -25,6 +25,7 @@ STRUC character
 	color 			dd 0		; color
 	in_the_air		dd 0		; is mario currently in the air
 	x_overlapping 	dd 0 		; 1 if mario is overlapping with a block in x coordinate, 0 otherwise
+	y_overlapping 	dd 0		; 1 if mario is overlapping with a block in y coordinate, 0 otherwise
 ENDS character
 
 STRUC platform
@@ -45,20 +46,32 @@ PROC checkCollision
 	cmp ebx, 320				; checks for the right 
 	jg xOverlap					; edge of the screen
 	cmp eax, ebx			; checks for overlap 
-	jge noOverlap			; with blocks
+	jge noXOverlap				; with blocks
 	
 	mov eax, [mario.x]
 	mov ebx, [ground2.x]
 	add ebx, [ground2.w]
 	cmp eax, ebx
-	jge noOverlap
-	
+	jge noXOverlap
 xOverlap:
 	mov [mario.x_overlapping], 1
-	jmp endProcedure
-yOverlap:
+	jmp checkY
+noXOverlap:
+	mov [mario.x_overlapping], 0
+checkY:
+	;mov eax, [ground.y]
+	;mov ebx, [mario.y]
+	;add ebx, [mario.h]
+	;cmp eax, ebx
+	;jge endProcedure
 	
-noOverlap:
+	;mov eax, [mario.x]
+	;mov ebx, [ground2.x]
+	;add ebx, [ground2.w]
+	;cmp eax, ebx
+	;jge endProcedure
+yOverlap:	
+	;mov [mario.y_overlapping], 1
 endProcedure:
 	ret
 ENDP checkCollision
@@ -101,8 +114,8 @@ mainloop:
 	call checkCollision
 	add [mario.x], 4
 	cmp [mario.x_overlapping], 1
-	mov [mario.x_overlapping], 0
 	je noLeft
+	mov [mario.x_overlapping], 0
 	sub [mario.x], 4
 	
 noLeft:	
@@ -114,8 +127,8 @@ noLeft:
 	call checkCollision
 	sub [mario.x], 4
 	cmp [mario.x_overlapping], 1
-	mov [mario.x_overlapping], 0
 	je noRight
+	mov [mario.x_overlapping], 0
 	add [mario.x], 4	
 	
 noRight:
@@ -154,7 +167,8 @@ noJump:
 	
 	; test for collision
 	cmp [mario.y], 160
-	jle noCollision
+	jne noCollision
+	;cmp [mario.y_overlapping], 1
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y], 160
@@ -170,7 +184,7 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <180,160,0,0,16,20,33h,0,0>
+	mario character <180,160,0,0,16,20,33h,0,0,0>
 	ground platform <0,180,320,20,25h>
 	ground2 platform <40,100,40,80,25h>
 	;terrain	dd ground, ground2					; array that 
