@@ -1,3 +1,4 @@
 GLOBAL 	fillRect:PROC, \
 	drawRects:PROC, \
-	drawPlatform:PROC
+	platformDown:PROC, \
+	platformUp:PROC
