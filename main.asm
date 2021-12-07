@@ -187,47 +187,95 @@ noUp:
 noJump:
 	; gravity
 	inc [mario.speed_y]
+	
 ; check for collision	
 check1:
 	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
 	cmp [mario.y_overlapping], 1
 	jne check2
+	mov ebx, 0
+	cmp [mario.speed_y], ebx
+	jle bottom1
+top1:
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y_overlapping], 0
 	mov ebx, [ground1.y]
 	sub ebx, [mario.h]
 	mov [mario.y], ebx
+	jmp check2
+bottom1:
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground1.y]
+	add ebx, [ground1.h]
+	mov [mario.y], ebx
+	mov [mario.speed_y], 1
+	
 check2:
 	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
 	cmp [mario.y_overlapping], 1
 	jne check3
+	mov ebx, 0
+	cmp [mario.speed_y], ebx
+	jle bottom2
+top2:  ; if collision is with top of platform 2
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y_overlapping], 0
 	mov ebx, [ground2.y]
 	sub ebx, [mario.h]
 	mov [mario.y], ebx
+	jmp check3
+bottom2:
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground2.y]
+	add ebx, [ground2.h]
+	mov [mario.y], ebx
+	mov [mario.speed_y], 1
+	
 check3:
 	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
 	cmp [mario.y_overlapping], 1
 	jne check4
+	mov ebx, 0
+	cmp [mario.speed_y], ebx
+	jle bottom3
+top3:
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y_overlapping], 0
 	mov ebx, [ground3.y]
 	sub ebx, [mario.h]
 	mov [mario.y], ebx
+	jmp check4
+bottom3:
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground3.y]
+	add ebx, [ground3.h]
+	mov [mario.y], ebx
+	mov [mario.speed_y], 1
+	
 check4:
 	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
 	cmp [mario.y_overlapping], 1
 	jne noCollision
+	mov ebx, 0
+	cmp [mario.speed_y], ebx
+	jle bottom4
+top4:
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y_overlapping], 0
 	mov ebx, [ground4.y]
 	sub ebx, [mario.h]
 	mov [mario.y], ebx
+	jmp noCollision
+bottom4:
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground4.y]
+	add ebx, [ground4	.h]
+	mov [mario.y], ebx
+	mov [mario.speed_y], 1
 	
 noCollision:
 	mov [mario.y_overlapping], 0
@@ -238,12 +286,13 @@ exit:
 	; exit on esc
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
+	ret
 ENDP main	
 
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
 	ground1 platform <0,190,320,10,25h>
-	ground2 platform <240,165,40,5,25h>
+	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>
 	
