@@ -43,6 +43,110 @@ STRUC platform
 	color			dd 0		; color
 ENDS platform
 
+STRUC newPlatform
+	x0		dd 0
+	y0		dd 0
+	x1		dd 0
+	y1		dd 0
+	d_x		dd 0 ; d_x & d_y should both be positive
+	d_y		dd 0
+	h		dd 0
+	color	dd 0
+ENDS newPlatform
+
+PROC checkCollision_new
+	ARG @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword, @@h: dword RETURNS eax
+	USES ebx
+	
+; x collision is hetz als vroeger
+@@checkX:
+	mov ebx, [mario.x]
+	cmp ebx, 0					; checks for the left 
+	jl @@outOfBounds				; edge of the screen
+	
+	add ebx, [mario.w]
+	cmp ebx, 320				; checks for the right 
+	jg @@outOfBounds				; edge of the screen
+	
+	mov eax, [@@x0]
+	cmp eax, ebx			; checks for overlap 
+	jge @@noXOverlap			; with blocks
+	
+	mov eax, [mario.x]
+	mov ebx, [@@x1]
+	cmp eax, ebx
+	jge @@noXOverlap
+@@xOverlap:
+	mov [mario.x_overlapping], 1
+	jmp @@checkY
+@@noXOverlap:
+	mov eax, 0
+	ret
+	
+@@checkY:
+	; check dat y+h niet > SCRWIDTH
+	mov eax, [mario.y]
+	add eax, [mario.h]
+	cmp eax, SCRWIDTH
+	jg ded
+
+	call collision_down, [mario.x], [mario.y], [mario.w], [mario.h], \
+		[@@x0], [@@y0], [@@x1], [@@y1]
+	cmp eax, 0
+	je @@noYOverlap
+
+; nog te implementeren -> collision_up	
+;	mov eax, [mario.y]
+;	mov ebx, [@@y0]
+;	add ebx, [@@h]
+;	cmp eax, ebx
+;	jge noYOverlap
+@@yOverlap:	
+	mov [mario.y_overlapping], 1
+	ret
+@@noYOverlap:
+	mov [mario.y_overlapping], 0
+	mov [mario.x_overlapping], 0
+	mov eax, 0
+	ret
+@@outOfBounds:
+	mov [mario.x_overlapping], 1
+	
+	ret	
+ENDP checkCollision_new
+
+PROC checkMarioCollision
+	ARG @@ground: newPlatform
+	USES eax, ebx
+	
+	; check for collision	
+@@check:
+;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	call checkCollision_new, [@@ground.x0], [@@ground.y0], [@@ground.x1], [@@ground.y1], [@@ground.h]
+	cmp [mario.y_overlapping], 1
+	jne @@nocol
+	mov ebx, 0
+	cmp [mario.speed_y], ebx
+	jge @@bottom
+@@top:
+	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
+	mov [mario.y_overlapping], 0
+	mov ebx, [ground1.y0]
+	sub ebx, [mario.h]
+;	mov [mario.y], ebx
+	jmp @@nocol
+@@bottom:
+; TODO: in de proc collision_down al meteen implementeren dat als eax != 0, eax de y-waarde bevat die de linker/rechterbenedenhoek zou moeten hebben om mooi overeen te komen -> die waarde gebruiken om de juiste pos van mario terug te vinden
+	mov [mario.y_overlapping], 0
+	mov [mario.y], eax 
+	mov [mario.speed_y], 0
+	mov [mario.in_the_air], 0
+@@nocol:
+
+
+	ret
+ENDP checkMarioCollision
 
 PROC checkCollision
 	ARG @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
@@ -106,7 +210,7 @@ PROC main
 	call setVideoMode, 13h
 	call __keyb_installKeyboardHandler
 
-	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
+	call platformDown, [ground1.x0], [ground1.y0], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
 	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
 	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
@@ -122,14 +226,13 @@ mainloop:
 	mov ebx, [offset __keyb_keyboardState + 1Eh] ;Q
 	cmp ebx, 1
 	jne noLeft
-	
-	sub [mario.x], 4
-	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	; move left
+;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
 	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
 	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
 	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
-	mov [mario.y_overlapping], 0      
-	add [mario.x], 4
+	mov [mario.y_overlapping], 0
 	cmp [mario.x_overlapping], 1
 	je noLeft
 	mov [mario.x_overlapping], 0
@@ -141,7 +244,8 @@ noLeft:
 	cmp ebx, 1
 	jne noRight
 	add [mario.x], 4
-	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
+	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
 	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
 	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
 	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
@@ -178,7 +282,9 @@ noUp:
 	
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
-	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
+	
+	; eig zouden deze calls niet nodig moeten zijn, want met de collision enz kan mario niet meer "door" de platformen gaan
+;	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
 	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
 	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
@@ -189,27 +295,8 @@ noJump:
 	inc [mario.speed_y]
 	
 ; check for collision	
-check1:
-	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
-	cmp [mario.y_overlapping], 1
-	jne check2
-	mov ebx, 0
-	cmp [mario.speed_y], ebx
-	jle bottom1
-top1:
-	mov [mario.speed_y], 0
-	mov [mario.in_the_air], 0
-	mov [mario.y_overlapping], 0
-	mov ebx, [ground1.y]
-	sub ebx, [mario.h]
-	mov [mario.y], ebx
-	jmp check2
-bottom1:
-	mov [mario.y_overlapping], 0
-	mov ebx, [ground1.y]
-	add ebx, [ground1.h]
-	mov [mario.y], ebx
-	mov [mario.speed_y], 1
+call checkMarioCollision, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.d_x], [ground1.d_y], [ground1.h], [groun1.color]
+	
 	
 check2:
 	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
@@ -283,6 +370,7 @@ noCollision:
 	jmp mainloop
 	
 exit:
+ded:
 	; exit on esc
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
@@ -291,7 +379,8 @@ ENDP main
 
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
-	ground1 platform <0,190,320,10,25h>
+;	ground1 platform <0,190,320,10,25h>
+	ground1 newPlatform <25, 180, 295, 185, 270, 5, 10, 25h>
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>

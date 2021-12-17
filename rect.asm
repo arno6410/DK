@@ -75,11 +75,8 @@ PROC platformDown
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine:
-;		dec eax
-		; ebx contains the value d_y*(x-x0/2-x0)
-		movzx ebx, [@@x0]
-		sar ebx, 1
-		neg bx
+		; ebx contains the value d_y*(x-x0)
+		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel:
@@ -113,10 +110,8 @@ PROC platformDown
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine2:
-		; ebx contains the value d_y*(x-x0/2-x0)
-		movzx ebx, [@@x0]
-		sar ebx, 2
-		neg ebx
+		; ebx contains the value d_y*(x-x0)
+		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel2:
@@ -180,10 +175,8 @@ PROC platformUp
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine:
-		; ebx contains the value d_y*(x-x0/2-x0)
-		movzx ebx, [@@x0]
-		sar ebx, 1
-		neg ebx
+		; ebx contains the value d_y*(x-x0)
+		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel:
@@ -216,10 +209,8 @@ PROC platformUp
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine2:
-		; ebx contains the value d_y*(x-x0/2-x0)
-		movzx ebx, [@@x0]
-		sar ebx, 1
-		neg ebx
+		; ebx contains the value d_y*(x-x0)
+		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel2:
@@ -251,6 +242,101 @@ PROC platformUp
 	cld
 	ret
 ENDP platformUp
+
+PROC collision_down
+	ARG @@rect: rect, @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword RETURNS eax
+	LOCAL @@d_x: dword, @@d_y: dword
+	USES ebx, ecx, edx
+	
+	mov eax, [@@x1]
+	sub eax, [@@x0]
+	mov [@@d_x], eax
+	
+	mov edx, [@@y1]
+	cmp edx, [@@y0]
+	jl @@upwards
+	
+	; if y1 > y0 (downwards slope): check the bottom left corner of character
+	mov eax, [@@y1]
+	sub eax, [@@y0]
+	mov [@@d_y], eax
+	
+	; bottom left corner: (x, y+h)
+	; ebx contains d_x*(y+h-y0)
+	mov edx, [@@rect.y]
+	add edx, [@@rect.h]
+	sub edx, [@@y0]
+	dec edx ; hackje om ervoor te zorgen dat raken != overlappen
+	mov eax, [@@d_x]
+	mul edx
+	mov ebx, eax
+	
+	; ecx contains d_y*(x-x0)
+	mov edx, [@@rect.x]
+	sub edx, [@@x0]
+	mov eax, [@@d_y]
+	mul edx
+	mov ecx, eax
+	
+	cmp ebx, ecx
+	jl @@noCollision_dd
+	; ecx/d_x = d_y/d_x * (x-x0) -> y-y0 op rechte -> +y0 doen -> y waarde op rechte
+	push edx
+	xor edx, edx
+	mov eax, ecx
+	div [@@d_x]
+	add eax, [@@y0]
+	sub eax, [@@rect.h]
+	inc eax
+	pop edx
+	ret
+	
+@@noCollision_dd:
+	xor eax, eax
+	ret
+	
+@@upwards:
+	; if y1 < y0 (upwards slope): check the bottom right corner of character
+	mov eax, [@@y0]
+	sub eax, [@@y1]
+	mov [@@d_y], eax
+	
+	; bottom right corner: (x+w, y+h)
+	; ebx contains d_x*(y+h-y0)
+	mov edx, [@@rect.y]
+	add edx, [@@rect.h]
+	sub edx, [@@y0]
+	mov eax, [@@d_x]
+	mul edx
+	mov ebx, eax
+	
+	; ecx contains d_y*(x+w-x0)
+	mov edx, [@@rect.x]
+	sub edx, ecx
+	add edx, [@@rect.w]
+	mov eax, [@@d_y]
+	mul edx
+	mov ecx, eax
+	
+	cmp ebx, ecx
+	jl @@noCollision_du
+	push edx
+	xor edx, edx
+	mov eax, ecx
+	div [@@d_x]
+	add eax, [@@y0]
+	sub eax, [@@rect.h]
+	inc eax
+	pop edx
+	ret
+	
+@@noCollision_du:
+	xor eax, eax
+	ret
+	
+	
+	ret
+ENDP collision_down
 
 ; Draws the 'fixed' rect
 PROC drawRects

@@ -1,4 +1,5 @@
 GLOBAL 	fillRect:PROC, \
 	drawRects:PROC, \
 	platformDown:PROC, \
-	platformUp:PROC
+	platformUp:PROC, \
+	collision_down:PROC
