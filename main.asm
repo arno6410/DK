@@ -84,12 +84,15 @@ PROC checkCollision_new
 	ret
 	
 @@checkY:
-	; check dat y+h niet > SCRWIDTH
+	; check dat y+h niet > SCRHEIGHT
 	mov eax, [mario.y]
 	add eax, [mario.h]
-	cmp eax, SCRWIDTH
-	jg ded
+	cmp eax, SCRHEIGHT
+	jle @@noProblem
+	mov eax, -1
+	ret
 
+@@noProblem:
 	call collision_down, [mario.x], [mario.y], [mario.w], [mario.h], \
 		[@@x0], [@@y0], [@@x1], [@@y1]
 	cmp eax, 0
@@ -123,6 +126,8 @@ PROC checkMarioCollision
 @@check:
 ;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
 	call checkCollision_new, [@@ground.x0], [@@ground.y0], [@@ground.x1], [@@ground.y1], [@@ground.h]
+	cmp eax, -1
+	je @@nocol
 	cmp [mario.y_overlapping], 1
 	jne @@nocol
 	mov ebx, 0
@@ -132,12 +137,8 @@ PROC checkMarioCollision
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 	mov [mario.y_overlapping], 0
-	mov ebx, [ground1.y0]
-	sub ebx, [mario.h]
-;	mov [mario.y], ebx
 	jmp @@nocol
 @@bottom:
-; TODO: in de proc collision_down al meteen implementeren dat als eax != 0, eax de y-waarde bevat die de linker/rechterbenedenhoek zou moeten hebben om mooi overeen te komen -> die waarde gebruiken om de juiste pos van mario terug te vinden
 	mov [mario.y_overlapping], 0
 	mov [mario.y], eax 
 	mov [mario.speed_y], 0
@@ -295,7 +296,9 @@ noJump:
 	inc [mario.speed_y]
 	
 ; check for collision	
-call checkMarioCollision, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.d_x], [ground1.d_y], [ground1.h], [groun1.color]
+	call checkMarioCollision, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
+	cmp eax, -1
+	je exit
 	
 	
 check2:

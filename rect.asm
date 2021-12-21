@@ -256,6 +256,10 @@ PROC collision_down
 	cmp edx, [@@y0]
 	jl @@upwards
 	
+	mov edx, [@@x0]
+	cmp edx, [@@rect.x]
+	jge @@noCheck
+	
 	; if y1 > y0 (downwards slope): check the bottom left corner of character
 	mov eax, [@@y1]
 	sub eax, [@@y0]
@@ -334,7 +338,9 @@ PROC collision_down
 	xor eax, eax
 	ret
 	
-	
+@@noCheck:
+	mov eax, [@@y0]
+	add eax, [@@rect.h]
 	ret
 ENDP collision_down
 
