@@ -306,7 +306,8 @@ mainloop:
 
 skipLeftBoundCheck:
 	mov [mario.x_overlapping], 0
-	sub [mario.x], 4
+;	sub [mario.x], 4
+	mov [mario.speed_x], -4
 	
 noLeft:	
 	mov [mario.x_overlapping], 0
@@ -332,7 +333,8 @@ noLeft:
 
 skipRightBoundCheck:
 	mov [mario.x_overlapping], 0
-	add [mario.x], 4
+;	add [mario.x], 4
+	mov [mario.speed_x], 4
 	
 noRight:
 	mov ebx, [mario.speed_y]
@@ -350,11 +352,12 @@ noUp:
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
-	call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
+	
 	mov ecx, [mario.speed_x]
 	add [mario.x], ecx
 	mov edx, [mario.speed_y]
 	add [mario.y], edx
+	call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
 	
 	call wait_VBLANK, 3
 	
@@ -363,9 +366,9 @@ noUp:
 	
 	; eig zouden deze calls niet nodig moeten zijn, want met de collision enz kan mario niet meer "door" de platformen gaan
 ;	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
-	;call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
-	;call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
-	;call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
+;	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
+;	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
+;	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
 	
 	
 	;call displayString, 5, 5, message
@@ -448,8 +451,13 @@ bottom4:
 	mov [mario.y], ebx
 	mov [mario.speed_y], 1
 	
+	
+	
 noCollision:
 	mov [mario.y_overlapping], 0
+	
+	; reset mario's speed_x
+	mov [mario.speed_x], 0
 	inc ecx
 	jmp mainloop
 	
@@ -464,7 +472,7 @@ ENDP main
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
 ;	ground1 platform <0,190,320,10,25h>
-	ground1 newPlatform <-10, 180, 285, 185, 295, 5, 10, 25h>
+	ground1 newPlatform <15, 180, 295, 185, 280, 5, 10, 25h>
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>

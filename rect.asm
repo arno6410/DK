@@ -298,10 +298,17 @@ PROC collision_down
 	cmp edx, [@@y0]
 	jl @@upwards
 	
+	; special exception for point (x0,y0)
+	xor eax, eax
 	mov edx, [@@x0]
 	cmp edx, [@@rect.x]
+	jl @@skipThis
+	mov edx, [@@rect.y]
+	add edx, [@@rect.h]
+	cmp edx, [@@y0]
 	jge @@noCheck
 	
+@@skipThis:
 	; if y1 > y0 (downwards slope): check the bottom left corner of character
 	mov eax, [@@y1]
 	sub eax, [@@y0]
@@ -382,7 +389,7 @@ PROC collision_down
 	
 @@noCheck:
 	mov eax, [@@y0]
-	add eax, [@@rect.h]
+	sub eax, [@@rect.h]
 	ret
 ENDP collision_down
 
