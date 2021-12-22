@@ -283,6 +283,8 @@ PROC platformUp
 	ret
 ENDP platformUp
 
+; if there's no collision -> eax returns 0
+; if there's overlap -> eax returns the y-coordinate of the correct placement
 PROC collision_down
 	ARG @@rect: rect, @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword RETURNS eax
 	LOCAL @@d_x: dword, @@d_y: dword

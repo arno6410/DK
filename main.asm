@@ -110,7 +110,6 @@ PROC checkCollision_new
 @@noYOverlap:
 	mov [mario.y_overlapping], 0
 	mov [mario.x_overlapping], 0
-	mov eax, 0
 	ret
 @@outOfBounds:
 	mov [mario.x_overlapping], 1
@@ -144,7 +143,7 @@ PROC checkMarioCollision
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 @@nocol:
-
+	mov [mario.x_overlapping], 0
 
 	ret
 ENDP checkMarioCollision
@@ -154,14 +153,15 @@ PROC checkCollision
 	USES eax, ebx
 
 checkX:
+; de out-of-boundscheck zouden we hier niet moeten doen denk ik
 	mov eax, [@@x0]
 	mov ebx, [mario.x]
-	cmp ebx, 0					; checks for the left 
-	jl outOfBounds				; edge of the screen
+;	cmp ebx, 0					; checks for the left 
+;	jl outOfBounds				; edge of the screen
 	
 	add ebx, [mario.w]
-	cmp ebx, 320				; checks for the right 
-	jg outOfBounds				; edge of the screen
+;	cmp ebx, 320				; checks for the right 
+;	jg outOfBounds				; edge of the screen
 	
 	cmp eax, ebx			; checks for overlap 
 	jge noXOverlap			; with blocks
@@ -298,6 +298,13 @@ mainloop:
 	mov [mario.y_overlapping], 0
 	cmp [mario.x_overlapping], 1
 	je noLeft
+	mov ebx, [mario.x]
+	cmp ebx, 4
+	jge skipLeftBoundCheck
+	mov [mario.x], 0
+	jmp noLeft
+
+skipLeftBoundCheck:
 	mov [mario.x_overlapping], 0
 	sub [mario.x], 4
 	
@@ -316,6 +323,14 @@ noLeft:
 	sub [mario.x], 4
 	cmp [mario.x_overlapping], 1
 	je noRight
+	mov ebx, [mario.x]
+	add ebx, [mario.w]
+	cmp ebx, SCRWIDTH-4
+	jle skipRightBoundCheck
+	mov [mario.x], 0
+	jmp noRight
+
+skipRightBoundCheck:
 	mov [mario.x_overlapping], 0
 	add [mario.x], 4
 	
@@ -449,7 +464,7 @@ ENDP main
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
 ;	ground1 platform <0,190,320,10,25h>
-	ground1 newPlatform <0, 180, 295, 185, 295, 5, 10, 25h>
+	ground1 newPlatform <-10, 180, 285, 185, 295, 5, 10, 25h>
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>
