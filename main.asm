@@ -210,7 +210,69 @@ PROC main
 	
 	call setVideoMode, 13h
 	call __keyb_installKeyboardHandler
+	
+	call drawRectangle,100,40,120,40,35h
+	call displayString, 7, 16, offset message1
+	call displayString, 17, 18, offset message2	
+	call displayString, 19, 2, offset controlsLeft
+	call displayString, 20, 2, offset controlsRight
+	call displayString, 21, 2, offset controlsUp
+	call displayString, 22, 2, offset controlsDown
+	call displayString, 23, 2, offset controlsEnter
+	
+	push 1 ; using the stack, 1 is the top button and 2 the bottom one
+	
+menuloop:
+	mov ebx, [offset __keyb_keyboardState + 11h] ;Z
+	cmp ebx, 1
+	je upmenu
+	
+	mov ebx, [offset __keyb_keyboardState + 1Fh] ;S
+	cmp ebx, 1
+	je downmenu
+	jmp checkKeypresses
+	
+upmenu:
+	pop ebx
+	cmp ebx, 1
+	je pushValue
+	mov ebx, 1
+	call drawRectangle,100,120,120,40,00h
+	call drawRectangle,100,40,120,40,35h
+	jmp pushValue
+	
+downmenu:
+	pop ebx
+	cmp ebx, 2
+	je pushValue
+	mov ebx, 2
+	call drawRectangle,100,40,120,40,00h
+	call drawRectangle,100,120,120,40,35h
+	
+pushValue:
+	push ebx
 
+checkKeypresses:
+	mov ebx, [offset __keyb_keyboardState + 1Ch] ;Enter
+	cmp ebx, 1
+	jne checkEsc
+	
+	pop ebx
+	cmp ebx, 2
+	je exit
+	
+	jmp newgame ; jump to the main game loop
+	
+checkEsc:
+	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
+	cmp ebx, 1
+	jne menuloop
+	
+	
+	
+	
+newgame:
+	call fillRect, 0, 0, 320, 200, 0h
 	call platformDown, [ground1.x0], [ground1.y0], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
 	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
@@ -286,20 +348,24 @@ noUp:
 	
 	; eig zouden deze calls niet nodig moeten zijn, want met de collision enz kan mario niet meer "door" de platformen gaan
 ;	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
-	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
-	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
-	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
+	;call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
+	;call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
+	;call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
+	
+	
+	;call displayString, 5, 5, message
+	
+	
 	
 	pop ecx
 noJump:
 	; gravity
 	inc [mario.speed_y]
 	
-; check for collision	
+; check for collision
 	call checkMarioCollision, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	cmp eax, -1
 	je exit
-	
 	
 check2:
 	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
@@ -383,15 +449,24 @@ ENDP main
 DATASEG
 	mario character <40,60,0,0,16,20,33h,0,0,0>
 ;	ground1 platform <0,190,320,10,25h>
-	ground1 newPlatform <25, 180, 295, 185, 270, 5, 10, 25h>
+	ground1 newPlatform <0, 180, 295, 185, 295, 5, 10, 25h>
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>
-	
-	;terrain	dd ground1, ground2					; array that 
+
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
+	
+	message1 	db "New Game", 13, 10, '$'
+	message2 	db "Exit", 13, 10, '$'
+	controlsLeft	db "Q: LEFT", 13, 10, '$'
+	controlsRight	db "D: RIGHT", 13, 10, '$'
+	controlsUp		db "Z: UP/JUMP", 13, 10, '$'
+	controlsDown	db "S: DOWN", 13, 10, '$'
+	controlsEnter	db "ENTER: SELECT", 13, 10, '$'
+	
+	message dd "test", '$'
 	
 	keybscancodes 	db 29h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 	52h, 47h, 49h, 	45h, 35h, 00h, 4Ah
 					db 0Fh, 10h, 11h, 12h, 13h, 14h, 15h, 16h, 17h, 18h, 19h, 1Ah, 1Bh, 		53h, 4Fh, 51h, 	47h, 48h, 49h, 		1Ch, 4Eh
