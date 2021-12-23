@@ -64,6 +64,20 @@ STRUC barrel
 	color 			dd 0		; color
 ENDS barrel
 
+PROC drawPlatforms
+	
+ENDP drawPlatforms
+
+PROC scrollUp
+	ARG @@n: dword
+	USES ebx
+	mov ebx, [@@n]
+	sub [mario.y], ebx
+	sub [ground2.y], ebx
+	sub [ground3.y], ebx
+	sub [ground4.y], ebx
+ENDP scrollUp
+
 PROC checkCollision_new
 	ARG @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword, @@h: dword RETURNS eax
 	USES ebx
@@ -147,38 +161,28 @@ ENDP checkMarioCollision
 
 PROC checkCollision
 	ARG @@n: dword
-	LOCAL @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+	LOCAL @@ground: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
 	USES eax, ebx
 	
 	cld
-
-	; *20 omdat 5 eigenschappen per platform en 4 bytes per dword
+	
+	; the platforms are in an array called platforms. the pointer to the nth platform is stored in [@@ground]
 	mov eax, [@@n]
 	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax]
+	mov ebx, [offset platformList + 4*eax]
+	mov [@@ground], ebx
+	
+	mov ebx, [@@ground]
+	mov eax, [ebx+platform.x]
 	mov [@@x0], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax + 4]
+	mov eax, [ebx+platform.y]
 	mov [@@y0], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax,  [offset platforms + eax + 8]
+	mov eax, [ebx+platform.w]
 	mov [@@w], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax + 12]
+	mov eax, [ebx+platform.h]
 	mov [@@h], eax
 
 checkX:
@@ -394,10 +398,18 @@ noUp:
 	; check dat y niet > SCRHEIGHT
 	mov eax, [mario.y]
 	cmp eax, SCRHEIGHT
-	jle @@noProblem
+	jle noProblem
 	jmp dead
 	
-@@noProblem:
+noProblem:
+
+	; mov ebx, 60
+	; cmp eax, ebx
+	; jge skip
+	; sub ebx, eax
+	; call scrollUp, ebx
+; skip:
+
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
@@ -509,17 +521,14 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <40,60,0,0,16,20,33h,0,0,0>
+	mario character <100,60,0,0,16,20,33h,0,0,0>
 ;	ground1 platform <0,190,320,10,25h>
 	ground1 newPlatform <15, 180, 295, 185, 280, 5, 10, 25h>
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>
-	
-	platforms 	dd 0,190,320,10,25h
-				dd 240,160,40,5,25h
-				dd 180,140,40,5,25h
-				dd 120,115,40,5,25h
+				
+	platformList dd ground1,ground2,ground3,ground4
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
