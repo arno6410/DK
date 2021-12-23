@@ -87,26 +87,26 @@ PROC drawRectangle
 ENDP drawRectangle
 
 PROC platformDown
-	ARG @@x0: word, @@y0: word, @@d_x: word, @@d_y: word, @@h: word, @@col: byte
-	LOCAL @@x1: word, @@y1: word
+	ARG @@x0: dword, @@y0: dword, @@d_x: dword, @@d_y: dword, @@h: dword, @@col: dword
+	LOCAL @@x1: dword, @@y1: dword
 	USES eax, ebx, ecx, edx, edi
 	
 	cld
 	
 	; calculate x1 & y1
-	movzx eax, [@@x0]
-	add ax, [@@d_x]
-	mov [@@x1], ax
-	movzx eax, [@@y0]
-	add ax, [@@d_y]
-	mov [@@y1], ax
+	mov eax, [@@x0]
+	add eax, [@@d_x]
+	mov [@@x1], eax
+	mov eax, [@@y0]
+	add eax, [@@d_y]
+	mov [@@y1], eax
 	
 ; first part
 	; compute top left corner
-	movzx eax, [@@y0]
+	mov eax, [@@y0]
 	mov edx, SCRWIDTH
 	mul edx
-	add ax, [@@x0]
+	add eax, [@@x0]
 	mov edi, VMEMADR
 	add edi, eax
 	
@@ -120,10 +120,10 @@ PROC platformDown
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel:
-			cmp ax, bx
+			cmp eax, ebx
 			jl @@notInside
 			push eax
-			movzx eax, [@@col]
+			mov eax, [@@col]
 			stosb
 			pop eax
 			jmp @@next
@@ -131,22 +131,22 @@ PROC platformDown
 		@@notInside:
 			inc edi
 		@@next:
-			add bx, [@@d_y]
+			add ebx, [@@d_y]
 			inc edx	
-		cmp dx, [@@d_x]
+		cmp edx, [@@d_x]
 		jle @@loopPixel
 		
 		; move to the next row
 		add edi, SCRWIDTH
-		sub di, [@@d_x]
+		sub edi, [@@d_x]
 		dec edi
-		add ax, [@@d_x]
+		add eax, [@@d_x]
 		inc ecx
-	cmp cx, [@@h]
+	cmp ecx, [@@h]
 	jl @@loopLine
 	
 ; second part
-	movzx eax, [@@h]
+	mov eax, [@@h]
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine2:
@@ -155,10 +155,10 @@ PROC platformDown
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel2:
-			cmp ax, bx
+			cmp eax, ebx
 			jg @@notInside2
 			push eax
-			movzx eax, [@@col]	
+			mov eax, [@@col]	
 			stosb
 			pop eax
 			jmp @@next2
@@ -166,18 +166,18 @@ PROC platformDown
 		@@notInside2:
 			inc edi
 		@@next2:
-			add bx, [@@d_y]
+			add ebx, [@@d_y]
 			inc edx	
-		cmp dx, [@@d_x]
+		cmp edx, [@@d_x]
 		jle @@loopPixel2
 		
 		; move to the next row
 		add edi, SCRWIDTH
-		sub di, [@@d_x]
+		sub edi, [@@d_x]
 		dec edi
-		add ax, [@@d_x]
+		add eax, [@@d_x]
 		inc ecx
-	cmp cx, [@@d_y]
+	cmp ecx, [@@d_y]
 	jl @@loopLine2
 	
 	ret
@@ -186,27 +186,27 @@ ENDP platformDown
 ; d_y is interpreted as being in the other direction (upwards)
 ; iow, y1 < y0
 PROC platformUp
-	ARG @@x0: word, @@y0: word, @@d_x: word, @@d_y: word, @@h: word, @@col: byte
-	LOCAL @@x1: word, @@y1: word
+	ARG @@x0: dword, @@y0: dword, @@d_x: dword, @@d_y: dword, @@h: dword, @@col: dword
+	LOCAL @@x1: dword, @@y1: dword
 	USES eax, ebx, ecx, edx, edi
 	
 	std
 	
 	; calculate x1 & y1
-	movzx eax, [@@x0]
-	add ax, [@@d_x]
-	dec ax
-	mov [@@x1], ax
-	movzx eax, [@@y0]
-	sub ax, [@@d_y]
-	mov [@@y1], ax
+	mov eax, [@@x0]
+	add eax, [@@d_x]
+	dec eax
+	mov [@@x1], eax
+	mov eax, [@@y0]
+	sub eax, [@@d_y]
+	mov [@@y1], eax
 	
 ; first part
 	; compute top right corner
-	movzx eax, [@@y1]
+	mov eax, [@@y1]
 	mov edx, SCRWIDTH
 	mul edx
-	add ax, [@@x1]
+	add eax, [@@x1]
 	mov edi, VMEMADR
 	add edi, eax
 	
@@ -220,10 +220,10 @@ PROC platformUp
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel:
-			cmp ax, bx
+			cmp eax, ebx
 			jl @@notInside
 			push eax
-			movzx eax, [@@col]
+			mov eax, [@@col]
 			stosb
 			pop eax
 			jmp @@next
@@ -231,21 +231,21 @@ PROC platformUp
 		@@notInside:
 			dec edi
 		@@next:
-			add bx, [@@d_y]
+			add ebx, [@@d_y]
 			inc edx	
-		cmp dx, [@@d_x]
+		cmp edx, [@@d_x]
 		jl @@loopPixel
 		
 		; move to the next row
 		add edi, SCRWIDTH
-		add di, [@@d_x]
-		add ax, [@@d_x]
+		add edi, [@@d_x]
+		add eax, [@@d_x]
 		inc ecx
-	cmp cx, [@@h]
+	cmp ecx, [@@h]
 	jl @@loopLine
 	
 ; second part
-	movzx eax, [@@h]
+	mov eax, [@@h]
 	; ecx is the row counter
 	xor ecx, ecx
 @@loopLine2:
@@ -254,10 +254,10 @@ PROC platformUp
 		; edx is the column counter
 		xor edx, edx
 	@@loopPixel2:
-			cmp ax, bx
+			cmp eax, ebx
 			jg @@notInside2
 			push eax
-			movzx eax, [@@col]	
+			mov eax, [@@col]	
 			stosb
 			pop eax
 			jmp @@next2
@@ -265,17 +265,17 @@ PROC platformUp
 		@@notInside2:
 			dec edi
 		@@next2:
-			add bx, [@@d_y]
+			add ebx, [@@d_y]
 			inc edx	
-		cmp dx, [@@d_x]
+		cmp edx, [@@d_x]
 		jl @@loopPixel2
 		
 		; move to the next row
 		add edi, SCRWIDTH
-		add di, [@@d_x]
-		add ax, [@@d_x]
+		add edi, [@@d_x]
+		add eax, [@@d_x]
 		inc ecx
-	cmp cx, [@@d_y]
+	cmp ecx, [@@d_y]
 	jl @@loopLine2
 	
 	
