@@ -54,6 +54,16 @@ STRUC newPlatform
 	color	dd 0
 ENDS newPlatform
 
+STRUC barrel
+	x				dd 0		; x position
+	y				dd 0		; y position
+	speed_x			dd 0		; x speedcomponent
+	speed_y			dd 0		; y speedcomponent
+	w				dd 0		; width
+	h 				dd 0		; height
+	color 			dd 0		; color
+ENDS barrel
+
 PROC checkCollision_new
 	ARG @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword, @@h: dword RETURNS eax
 	USES ebx
@@ -231,6 +241,7 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 mainMenu:
+	call fillRect,0,0,320,200,0h
 	call drawRectangle,100,40,120,40,35h
 	call displayString, 7, 16, offset msg1
 	call displayString, 17, 18, offset msg2	
