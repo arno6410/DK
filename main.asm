@@ -84,15 +84,6 @@ PROC checkCollision_new
 	ret
 	
 @@checkY:
-	; check dat y+h niet > SCRHEIGHT
-	mov eax, [mario.y]
-	add eax, [mario.h]
-	cmp eax, SCRHEIGHT
-	jle @@noProblem
-	mov eax, -1
-	ret
-
-@@noProblem:
 	call collision_down, [mario.x], [mario.y], [mario.w], [mario.h], \
 		[@@x0], [@@y0], [@@x1], [@@y1]
 	cmp eax, 0
@@ -125,8 +116,6 @@ PROC checkMarioCollision
 @@check:
 ;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
 	call checkCollision_new, [@@ground.x0], [@@ground.y0], [@@ground.x1], [@@ground.y1], [@@ground.h]
-	cmp eax, -1
-	je @@nocol
 	cmp [mario.y_overlapping], 1
 	jne @@nocol
 	mov ebx, 0
@@ -143,8 +132,6 @@ PROC checkMarioCollision
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], 0
 @@nocol:
-	mov [mario.x_overlapping], 0
-
 	ret
 ENDP checkMarioCollision
 
@@ -211,6 +198,7 @@ PROC main
 	call setVideoMode, 13h
 	call __keyb_installKeyboardHandler
 	
+mainMenu:
 	call drawRectangle,100,40,120,40,35h
 	call displayString, 7, 16, offset message1
 	call displayString, 17, 18, offset message2	
@@ -272,6 +260,15 @@ checkEsc:
 	
 	
 newgame:
+	; (re-)initialise mario
+	; mario character <40,60,0,0,16,20,33h,0,0,0>
+	mov [mario.x], 40
+	mov [mario.y], 60
+	mov [mario.speed_x], 0
+	mov [mario.speed_y], 0
+	mov [mario.w], 16
+	mov [mario.h], 20
+	
 	call fillRect, 0, 0, 320, 200, 0h
 	call platformDown, [ground1.x0], [ground1.y0], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
@@ -349,6 +346,13 @@ noRight:
 	mov [mario.in_the_air], 1
 	
 noUp:
+	; check dat y niet > SCRHEIGHT
+	mov eax, [mario.y]
+	cmp eax, SCRHEIGHT
+	jle @@noProblem
+	jmp dead
+	
+@@noProblem:
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
@@ -451,8 +455,6 @@ bottom4:
 	mov [mario.y], ebx
 	mov [mario.speed_y], 1
 	
-	
-	
 noCollision:
 	mov [mario.y_overlapping], 0
 	
@@ -461,8 +463,14 @@ noCollision:
 	inc ecx
 	jmp mainloop
 	
+dead:
+	call wait_VBLANK, 30
+	call fillRect, 0, 0, 320, 200, 0h
+	call displayString, 7, 2, offset dead_message
+	call wait_VBLANK, 90
+	
+	jmp mainMenu
 exit:
-ded:
 	; exit on esc
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
@@ -489,7 +497,7 @@ DATASEG
 	controlsDown	db "S: DOWN", 13, 10, '$'
 	controlsEnter	db "ENTER: SELECT", 13, 10, '$'
 	
-	message dd "test", '$'
+	dead_message db "ded.",13,10,'$'
 	
 	keybscancodes 	db 29h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 	52h, 47h, 49h, 	45h, 35h, 00h, 4Ah
 					db 0Fh, 10h, 11h, 12h, 13h, 14h, 15h, 16h, 17h, 18h, 19h, 1Ah, 1Bh, 		53h, 4Fh, 51h, 	47h, 48h, 49h, 		1Ch, 4Eh
