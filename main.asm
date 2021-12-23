@@ -71,12 +71,12 @@ PROC checkCollision_new
 ; x collision is hetz als vroeger
 @@checkX:
 	mov ebx, [mario.x]
-	cmp ebx, 0					; checks for the left 
-	jl @@outOfBounds				; edge of the screen
+;	cmp ebx, 0					; checks for the left 
+;	jl @@outOfBounds				; edge of the screen
 	
 	add ebx, [mario.w]
-	cmp ebx, 320				; checks for the right 
-	jg @@outOfBounds				; edge of the screen
+;	cmp ebx, 320				; checks for the right 
+;	jg @@outOfBounds				; edge of the screen
 	
 	mov eax, [@@x0]
 	cmp eax, ebx			; checks for overlap 
@@ -295,7 +295,8 @@ checkKeypresses:
 	jmp newgame ; jump to the main game loop
 	
 checkEsc:
-	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
+;	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
+	mov ebx, 0
 	cmp ebx, 1
 	jne menuloop
 	
@@ -308,6 +309,7 @@ newgame:
 	mov [mario.speed_y], 0
 	mov [mario.w], 16
 	mov [mario.h], 20
+	
 	call fillRect, 0, 0, 320, 200, 0h
 	call platformDown, [ground1.x0], [ground1.y0], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
@@ -319,22 +321,21 @@ mainloop:
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
-	je exit
+	je mainMenu
 	
 	mov ebx, [offset __keyb_keyboardState + 1Eh] ;Q
 	cmp ebx, 1
 	jne noLeft
 	; move left
-;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
-	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
+;	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
 	
-	call checkCollision, 2
-	call checkCollision, 3
-	call checkCollision, 4
+;	call checkCollision, 2
+;	call checkCollision, 3
+;	call checkCollision, 4
 	
-	mov [mario.y_overlapping], 0
-	cmp [mario.x_overlapping], 1
-	je noLeft
+;	mov [mario.y_overlapping], 0
+;	cmp [mario.x_overlapping], 1
+;	je noLeft
 	mov ebx, [mario.x]
 	cmp ebx, 4
 	jge skipLeftBoundCheck
@@ -351,29 +352,31 @@ noLeft:
 	mov ebx, [offset __keyb_keyboardState + 20h] ;D
 	cmp ebx, 1
 	jne noRight
-	add [mario.x], 4
-;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
-	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
 	
-	call checkCollision, 2
-	call checkCollision, 3
-	call checkCollision, 4
-	
-	mov [mario.y_overlapping], 0       
-	sub [mario.x], 4
-	cmp [mario.x_overlapping], 1
-	je noRight
-	mov ebx, [mario.x]
+;	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
+;	
+;	call checkCollision, 2
+;	call checkCollision, 3
+;	call checkCollision, 4
+;	
+;	mov [mario.y_overlapping], 0
+;	cmp [mario.x_overlapping], 1
+;	je noRight
+	; ecx contains the "old" mario.x
+	mov ecx, [mario.x]
+	mov ebx, ecx
 	add ebx, [mario.w]
 	cmp ebx, SCRWIDTH-4
 	jle skipRightBoundCheck
-	mov [mario.x], 0
+	mov ebx, SCRWIDTH
+	sub ebx, [mario.w]
+	mov [mario.x], ebx
 	jmp noRight
 
 skipRightBoundCheck:
 	mov [mario.x_overlapping], 0
 ;	add [mario.x], 4
-	mov [mario.speed_x], 4
+	mov [mario.speed_x], 4	
 	
 noRight:
 	mov ebx, [mario.speed_y]
@@ -410,15 +413,13 @@ noUp:
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
 	
-	pop ecx
+	
 noJump:
 	; gravity
 	inc [mario.speed_y]
 	
 ; check for collision
 	call checkMarioCollision, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
-	cmp eax, -1
-	je exit
 	
 check2:
 	call checkCollision, 2
@@ -491,14 +492,13 @@ noCollision:
 	
 	; reset mario's speed_x
 	mov [mario.speed_x], 0
-	inc ecx
 	jmp mainloop
 	
 dead:
-	call wait_VBLANK, 30
+;	call wait_VBLANK, 30
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset dead_message
-	call wait_VBLANK, 90
+	call wait_VBLANK, 60
 	
 	jmp mainMenu
 exit:
