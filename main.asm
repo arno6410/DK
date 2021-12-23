@@ -149,8 +149,40 @@ PROC checkMarioCollision
 ENDP checkMarioCollision
 
 PROC checkCollision
-	ARG @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+	ARG @@n: dword
+	LOCAL @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
 	USES eax, ebx
+	
+	cld
+
+	; *20 omdat 5 eigenschappen per platform en 4 bytes per dword
+	mov eax, [@@n]
+	dec eax
+	mov ebx, 20
+	mul ebx
+	mov eax, [offset platforms + eax]
+	mov [@@x0], eax
+	
+	mov eax, [@@n]
+	dec eax
+	mov ebx, 20
+	mul ebx
+	mov eax, [offset platforms + eax + 4]
+	mov [@@y0], eax
+	
+	mov eax, [@@n]
+	dec eax
+	mov ebx, 20
+	mul ebx
+	mov eax,  [offset platforms + eax + 8]
+	mov [@@w], eax
+	
+	mov eax, [@@n]
+	dec eax
+	mov ebx, 20
+	mul ebx
+	mov eax, [offset platforms + eax + 12]
+	mov [@@h], eax
 
 checkX:
 ; de out-of-boundscheck zouden we hier niet moeten doen denk ik
@@ -212,13 +244,13 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 	call drawRectangle,100,40,120,40,35h
-	call displayString, 7, 16, offset message1
-	call displayString, 17, 18, offset message2	
-	call displayString, 19, 2, offset controlsLeft
-	call displayString, 20, 2, offset controlsRight
-	call displayString, 21, 2, offset controlsUp
-	call displayString, 22, 2, offset controlsDown
-	call displayString, 23, 2, offset controlsEnter
+	call displayString, 7, 16, offset msg1
+	call displayString, 17, 18, offset msg2	
+	call displayString, 19, 2, offset msgControlsLeft
+	call displayString, 20, 2, offset msgControlsRight
+	call displayString, 21, 2, offset msgControlsUp
+	call displayString, 22, 2, offset msgControlsDown
+	call displayString, 23, 2, offset msgControlsEnter
 	
 	push 1 ; using the stack, 1 is the top button and 2 the bottom one
 	
@@ -272,6 +304,7 @@ checkEsc:
 	
 	
 newgame:
+
 	call fillRect, 0, 0, 320, 200, 0h
 	call platformDown, [ground1.x0], [ground1.y0], [ground1.d_x], [ground1.d_y], [ground1.h], [ground1.color]
 	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
@@ -280,7 +313,6 @@ newgame:
 	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], [mario.color]
 	
 mainloop:
-	
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
@@ -292,9 +324,11 @@ mainloop:
 	; move left
 ;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
 	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
-	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
-	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
-	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
+	
+	call checkCollision, 2
+	call checkCollision, 3
+	call checkCollision, 4
+	
 	mov [mario.y_overlapping], 0
 	cmp [mario.x_overlapping], 1
 	je noLeft
@@ -317,9 +351,11 @@ noLeft:
 	add [mario.x], 4
 ;	call checkCollision, [ground1.x], [ground1.y], [ground1.w], [ground1.h]
 	call checkCollision_new, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h]
-	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
-	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
-	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
+	
+	call checkCollision, 2
+	call checkCollision, 3
+	call checkCollision, 4
+	
 	mov [mario.y_overlapping], 0       
 	sub [mario.x], 4
 	cmp [mario.x_overlapping], 1
@@ -362,18 +398,7 @@ noUp:
 	call wait_VBLANK, 3
 	
 	; undraw mario
-	call fillRect, eax, ebx, [mario.w], [mario.h], 0h
-	
-	; eig zouden deze calls niet nodig moeten zijn, want met de collision enz kan mario niet meer "door" de platformen gaan
-;	call fillRect, [ground1.x], [ground1.y], [ground1.w], [ground1.h], [ground1.color]
-;	call fillRect, [ground2.x], [ground2.y], [ground2.w], [ground2.h], [ground2.color]
-;	call fillRect, [ground3.x], [ground3.y], [ground3.w], [ground3.h], [ground3.color]
-;	call fillRect, [ground4.x], [ground4.y], [ground4.w], [ground4.h], [ground4.color]
-	
-	
-	;call displayString, 5, 5, message
-	
-	
+	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
 	
 	pop ecx
 noJump:
@@ -386,7 +411,7 @@ noJump:
 	je exit
 	
 check2:
-	call checkCollision, [ground2.x], [ground2.y], [ground2.w], [ground2.h]
+	call checkCollision, 2
 	cmp [mario.y_overlapping], 1
 	jne check3
 	mov ebx, 0
@@ -408,7 +433,7 @@ bottom2:
 	mov [mario.speed_y], 1
 	
 check3:
-	call checkCollision, [ground3.x], [ground3.y], [ground3.w], [ground3.h]
+	call checkCollision, 3
 	cmp [mario.y_overlapping], 1
 	jne check4
 	mov ebx, 0
@@ -430,7 +455,7 @@ bottom3:
 	mov [mario.speed_y], 1
 	
 check4:
-	call checkCollision, [ground4.x], [ground4.y], [ground4.w], [ground4.h]
+	call checkCollision, 4
 	cmp [mario.y_overlapping], 1
 	jne noCollision
 	mov ebx, 0
@@ -476,20 +501,23 @@ DATASEG
 	ground2 platform <240,160,40,5,25h>
 	ground3 platform <180,140,40,5,25h>
 	ground4 platform <120,115,40,5,25h>
+	
+	platforms 	dd 0,190,320,10,25h
+				dd 240,160,40,5,25h
+				dd 180,140,40,5,25h
+				dd 120,115,40,5,25h
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
 	closeErrorMsg db "error during file closing", 13, 10, '$'
 	
-	message1 	db "New Game", 13, 10, '$'
-	message2 	db "Exit", 13, 10, '$'
-	controlsLeft	db "Q: LEFT", 13, 10, '$'
-	controlsRight	db "D: RIGHT", 13, 10, '$'
-	controlsUp		db "Z: UP/JUMP", 13, 10, '$'
-	controlsDown	db "S: DOWN", 13, 10, '$'
-	controlsEnter	db "ENTER: SELECT", 13, 10, '$'
-	
-	message dd "test", '$'
+	msg1 	db "New Game", 13, 10, '$'
+	msg2 	db "Exit", 13, 10, '$'
+	msgControlsLeft		db "Q: LEFT", 13, 10, '$'
+	msgControlsRight	db "D: RIGHT", 13, 10, '$'
+	msgControlsUp		db "Z: UP/JUMP", 13, 10, '$'
+	msgControlsDown		db "S: DOWN", 13, 10, '$'
+	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
 	
 	keybscancodes 	db 29h, 02h, 03h, 04h, 05h, 06h, 07h, 08h, 09h, 0Ah, 0Bh, 0Ch, 0Dh, 0Eh, 	52h, 47h, 49h, 	45h, 35h, 00h, 4Ah
 					db 0Fh, 10h, 11h, 12h, 13h, 14h, 15h, 16h, 17h, 18h, 19h, 1Ah, 1Bh, 		53h, 4Fh, 51h, 	47h, 48h, 49h, 		1Ch, 4Eh
