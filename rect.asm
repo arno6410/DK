@@ -86,22 +86,24 @@ PROC drawRectangle
 	ret
 ENDP drawRectangle
 
-PROC platformDown
-	ARG @@x0: dword, @@y0: dword, @@d_x: dword, @@d_y: dword, @@h: dword, @@col: dword
-	LOCAL @@x1: dword, @@y1: dword
+PROC platform_both
+	ARG @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword, @@h: dword, @@col: dword
+	LOCAL @@d_x: dword, @@d_y: dword
 	USES eax, ebx, ecx, edx, edi
 	
-	cld
+	mov eax, [@@x1]
+	sub eax, [@@x0]
+	mov [@@d_x], eax
 	
-	; calculate x1 & y1
-	mov eax, [@@x0]
-	add eax, [@@d_x]
-	mov [@@x1], eax
-	mov eax, [@@y0]
-	add eax, [@@d_y]
-	mov [@@y1], eax
+	mov eax, [@@y1]
+	sub eax, [@@y0]
+	mov [@@d_y], eax
+	cmp eax, 0
+	jl @@platform_up
 	
-; first part
+@@platform_down:
+	
+	; first part
 	; compute top left corner
 	mov eax, [@@y0]
 	mov edx, SCRWIDTH
@@ -114,27 +116,27 @@ PROC platformDown
 	xor eax, eax
 	; ecx is the row counter
 	xor ecx, ecx
-@@loopLine:
+@@loopLine_d:
 		; ebx contains the value d_y*(x-x0)
 		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
-	@@loopPixel:
+	@@loopPixel_d:
 			cmp eax, ebx
-			jl @@notInside
+			jl @@notInside_d
 			push eax
 			mov eax, [@@col]
 			stosb
 			pop eax
-			jmp @@next
+			jmp @@next_d
 			
-		@@notInside:
+		@@notInside_d:
 			inc edi
-		@@next:
+		@@next_d:
 			add ebx, [@@d_y]
 			inc edx	
 		cmp edx, [@@d_x]
-		jle @@loopPixel
+		jle @@loopPixel_d
 		
 		; move to the next row
 		add edi, SCRWIDTH
@@ -143,33 +145,33 @@ PROC platformDown
 		add eax, [@@d_x]
 		inc ecx
 	cmp ecx, [@@h]
-	jl @@loopLine
+	jl @@loopLine_d
 	
 ; second part
 	mov eax, [@@h]
 	; ecx is the row counter
 	xor ecx, ecx
-@@loopLine2:
+@@loopLine_d2:
 		; ebx contains the value d_y*(x-x0)
 		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
-	@@loopPixel2:
+	@@loopPixel_d2:
 			cmp eax, ebx
-			jg @@notInside2
+			jg @@notInside_d2
 			push eax
 			mov eax, [@@col]	
 			stosb
 			pop eax
-			jmp @@next2
+			jmp @@next_d2
 			
-		@@notInside2:
+		@@notInside_d2:
 			inc edi
-		@@next2:
+		@@next_d2:
 			add ebx, [@@d_y]
 			inc edx	
 		cmp edx, [@@d_x]
-		jle @@loopPixel2
+		jle @@loopPixel_d2
 		
 		; move to the next row
 		add edi, SCRWIDTH
@@ -178,30 +180,14 @@ PROC platformDown
 		add eax, [@@d_x]
 		inc ecx
 	cmp ecx, [@@d_y]
-	jl @@loopLine2
+	jl @@loopLine_d2
 	
 	ret
-ENDP platformDown
-
-; d_y is interpreted as being in the other direction (upwards)
-; iow, y1 < y0
-PROC platformUp
-	ARG @@x0: dword, @@y0: dword, @@d_x: dword, @@d_y: dword, @@h: dword, @@col: dword
-	LOCAL @@x1: dword, @@y1: dword
-	USES eax, ebx, ecx, edx, edi
 	
+@@platform_up:
+	neg [@@d_y] ; now d_y is positive
 	std
-	
-	; calculate x1 & y1
-	mov eax, [@@x0]
-	add eax, [@@d_x]
-	dec eax
-	mov [@@x1], eax
-	mov eax, [@@y0]
-	sub eax, [@@d_y]
-	mov [@@y1], eax
-	
-; first part
+	; first part
 	; compute top right corner
 	mov eax, [@@y1]
 	mov edx, SCRWIDTH
@@ -214,27 +200,27 @@ PROC platformUp
 	xor eax, eax
 	; ecx is the row counter
 	xor ecx, ecx
-@@loopLine:
+@@loopLine_u:
 		; ebx contains the value d_y*(x-x0)
 		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
-	@@loopPixel:
+	@@loopPixel_u:
 			cmp eax, ebx
-			jl @@notInside
+			jl @@notInside_u
 			push eax
 			mov eax, [@@col]
 			stosb
 			pop eax
-			jmp @@next
+			jmp @@next_u
 			
-		@@notInside:
+		@@notInside_u:
 			dec edi
-		@@next:
+		@@next_u:
 			add ebx, [@@d_y]
 			inc edx	
 		cmp edx, [@@d_x]
-		jl @@loopPixel
+		jl @@loopPixel_u
 		
 		; move to the next row
 		add edi, SCRWIDTH
@@ -242,33 +228,33 @@ PROC platformUp
 		add eax, [@@d_x]
 		inc ecx
 	cmp ecx, [@@h]
-	jl @@loopLine
+	jl @@loopLine_u
 	
 ; second part
 	mov eax, [@@h]
 	; ecx is the row counter
 	xor ecx, ecx
-@@loopLine2:
+@@loopLine_u2:
 		; ebx contains the value d_y*(x-x0)
 		xor ebx, ebx
 		; edx is the column counter
 		xor edx, edx
-	@@loopPixel2:
+	@@loopPixel_u2:
 			cmp eax, ebx
-			jg @@notInside2
+			jg @@notInside_u2
 			push eax
 			mov eax, [@@col]	
 			stosb
 			pop eax
-			jmp @@next2
+			jmp @@next_u2
 			
-		@@notInside2:
+		@@notInside_u2:
 			dec edi
-		@@next2:
+		@@next_u2:
 			add ebx, [@@d_y]
 			inc edx	
 		cmp edx, [@@d_x]
-		jl @@loopPixel2
+		jl @@loopPixel_u2
 		
 		; move to the next row
 		add edi, SCRWIDTH
@@ -276,14 +262,13 @@ PROC platformUp
 		add eax, [@@d_x]
 		inc ecx
 	cmp ecx, [@@d_y]
-	jl @@loopLine2
-	
-	
+	jl @@loopLine_u2
 	cld
+	
 	ret
-ENDP platformUp
+ENDP platform_both
 
-; if there's no collision -> eax returns 0
+; if there's no collision -> eax returns -1
 ; if there's overlap -> eax returns the y-coordinate of the correct placement
 PROC collision_down
 	ARG @@rect: rect, @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword RETURNS eax
@@ -299,14 +284,16 @@ PROC collision_down
 	jl @@upwards
 	
 	; special exception for point (x0,y0)
-	xor eax, eax
 	mov edx, [@@x0]
 	cmp edx, [@@rect.x]
 	jl @@skipThis
-	mov edx, [@@rect.y]
+;	mov edx, [@@rect.y]
+;	cmp edx, [@@y0]
+;	jle @@skipThis
 	add edx, [@@rect.h]
 	cmp edx, [@@y0]
 	jge @@noCheck
+	
 	
 @@skipThis:
 	; if y1 > y0 (downwards slope): check the bottom left corner of character
@@ -332,7 +319,7 @@ PROC collision_down
 	mov ecx, eax
 	
 	cmp ebx, ecx
-	jl @@noCollision_dd
+	jl @@noCollision
 	; ecx/d_x = d_y/d_x * (x-x0) -> y-y0 op rechte -> +y0 doen -> y waarde op rechte
 	push edx
 	xor edx, edx
@@ -342,10 +329,6 @@ PROC collision_down
 	sub eax, [@@rect.h]
 	inc eax
 	pop edx
-	ret
-	
-@@noCollision_dd:
-	xor eax, eax
 	ret
 	
 @@upwards:
@@ -372,7 +355,7 @@ PROC collision_down
 	mov ecx, eax
 	
 	cmp ebx, ecx
-	jl @@noCollision_du
+	jl @@noCollision
 	push edx
 	xor edx, edx
 	mov eax, ecx
@@ -383,8 +366,8 @@ PROC collision_down
 	pop edx
 	ret
 	
-@@noCollision_du:
-	xor eax, eax
+@@noCollision:
+	mov eax, -1
 	ret
 	
 @@noCheck:
