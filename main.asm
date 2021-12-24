@@ -84,10 +84,16 @@ PROC checkCharCollision
 	
 	mov eax, [ebx + character.x]
 	cmp eax, [ecx + newPlatform.x1]
-	jg @@nocol
+	jg @@yep
 	add eax, [ebx + character.w]
 	cmp eax, [ecx + newPlatform.x0]
-	jl @@nocol
+	jl @@yep
+	jmp @@check
+@@yep:
+	cmp [ebx + character.currentPlatform], ecx
+	jne @@nocol
+	mov [ebx + character.in_the_air], -1
+	ret
 	; check for collision	
 @@check:
 	call collision_down, [ebx + character.x], [ebx + character.y], [ebx + character.w], [ebx + character.h], \
@@ -101,13 +107,13 @@ PROC checkCharCollision
 	mov [ebx + character.currentPlatform], ecx
 	jmp @@nocol
 @@in_the_air:
-	; om te checken of mario echt in de lucht is, kijken we of er collision zou zijn als we mario 1 pixel naar beneden zouden verschuiven
+	; om te checken of mario echt in de lucht is, kijken we of er collision zou zijn als we mario enkele pixels naar beneden zouden verschuiven
 	mov eax, [ebx + character.y]
-	inc eax
-	inc eax
+	add eax, 2
 	call collision_down, [ebx + character.x], eax, [ebx + character.w], [ebx + character.h], \
 	 [ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
+;	mov [ebx + character.in_the_air], 0
 	jne @@nocol
 	mov [ebx + character.in_the_air], -1
 @@nocol:
@@ -213,7 +219,7 @@ PROC x_collision
 	; now we need to calculate the right x-coordinate
 	cmp [ebx + character.speed_x], 0
 	je @@nocol
-	jl @@rightwards
+	jg @@rightwards
 	
 	; leftwards
 	; this means that char came from the rightmost side of pf 
@@ -221,6 +227,8 @@ PROC x_collision
 	mov eax, [ecx + newPlatform.x1]
 	inc eax
 	mov [ebx + character.x], eax
+	mov [ebx + character.color], 1h
+	ret
 	
 @@rightwards:
 	mov eax, [ecx + newPlatform.x0]
