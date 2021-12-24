@@ -61,78 +61,83 @@ STRUC barrel
 	h 				dd 0		; height
 	color 			dd 0		; color
 ENDS barrel
+PROC drawPlatforms
+	
+ENDP drawPlatforms
 
-PROC checkMarioCollision
-	ARG @@o_ground: dword
-	USES eax, ebx
+PROC scrollUp
+	ARG @@n: dword
+	USES ebx
+	mov ebx, [@@n]
+	sub [mario.y], ebx
+	sub [ground2.y], ebx
+	sub [ground3.y], ebx
+	sub [ground4.y], ebx
+ENDP scrollUp
+
+PROC checkCharCollision
+	ARG @@o_char: dword, @@o_pf: dword
+	USES eax, ebx, ecx
 	
-	mov ebx, [@@o_ground]
+	mov ebx, [@@o_char]
+	mov ecx, [@@o_pf]
 	
-	mov eax, [mario.x]
-	cmp eax, [ebx + newPlatform.x1]
+	mov eax, [ebx + character.x]
+	cmp eax, [ecx + newPlatform.x1]
 	jg @@nocol
-	add eax, [mario.w]
-	cmp eax, [ebx + newPlatform.x0]
+	add eax, [ebx + character.w]
+	cmp eax, [ecx + newPlatform.x0]
 	jl @@nocol
 	; check for collision	
 @@check:
-	call collision_down, [mario.x], [mario.y], [mario.w], [mario.h], \
-	 [ebx + newPlatform.x0], [ebx + newPlatform.y0], [ebx + newPlatform.x1], [ebx + newPlatform.y1]
+	call collision_down, [ebx + character.x], [ebx + character.y], [ebx + character.w], [ebx + character.h], \
+	 [ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
 	je @@in_the_air
 	; collision!
-	mov [mario.speed_y], 0
-	mov [mario.in_the_air], 0
-	mov [mario.y], eax
-	mov [mario.currentPlatform], ebx
+	mov [ebx + character.speed_y], 0
+	mov [ebx + character.in_the_air], 0
+	mov [ebx + character.y], eax
+	mov [ebx + character.currentPlatform], ecx
 	jmp @@nocol
 @@in_the_air:
 	; om te checken of mario echt in de lucht is, kijken we of er collision zou zijn als we mario 1 pixel naar beneden zouden verschuiven
-	mov eax, [mario.y]
+	mov eax, [ebx + character.y]
 	inc eax
-	call collision_down, [mario.x], eax, [mario.w], [mario.h], \
-	 [ebx + newPlatform.x0], [ebx + newPlatform.y0], [ebx + newPlatform.x1], [ebx + newPlatform.y1]
+	inc eax
+	call collision_down, [ebx + character.x], eax, [ebx + character.w], [ebx + character.h], \
+	 [ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
 	jne @@nocol
-	mov [mario.in_the_air], -1
+	mov [ebx + character.in_the_air], -1
 @@nocol:
 	ret
-ENDP checkMarioCollision
+ENDP checkCharCollision
 
 PROC checkCollision
 	ARG @@n: dword
-	LOCAL @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+	LOCAL @@ground: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
 	USES eax, ebx
 	
 	cld
-
-	; *20 omdat 5 eigenschappen per platform en 4 bytes per dword
+	
+	; the platforms are in an array called platforms. the pointer to the nth platform is stored in [@@ground]
 	mov eax, [@@n]
 	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax]
+	mov ebx, [offset platformList + 4*eax]
+	mov [@@ground], ebx
+	
+	mov ebx, [@@ground]
+	mov eax, [ebx+platform.x]
 	mov [@@x0], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax + 4]
+	mov eax, [ebx+platform.y]
 	mov [@@y0], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax,  [offset platforms + eax + 8]
+	mov eax, [ebx+platform.w]
 	mov [@@w], eax
 	
-	mov eax, [@@n]
-	dec eax
-	mov ebx, 20
-	mul ebx
-	mov eax, [offset platforms + eax + 12]
+	mov eax, [ebx+platform.h]
 	mov [@@h], eax
 
 checkX:
@@ -180,22 +185,28 @@ ENDP checkCollision
 ; if no x_col -> nothing happens
 ; if x_col -> char.x gets moved so that there's no more overlap
 ; which side (left or right) of the platform depends on speed_x being positive or negative
+; only to be used if pf is not the char's currentPlatform
 PROC x_collision
-	ARG @@o_char: dword, @@pf: newPlatform
+	ARG @@o_char: dword, @@o_pf: dword
 ;	LOCAL
-	USES eax, ebx
+	USES eax, ebx, ecx
 	
 	mov ebx, [@@o_char]
+	mov ecx, [@@o_pf]
+	
+	cmp [ebx + character.currentPlatform], ecx
+	je @@nocol
+	
 	mov eax, [ebx + character.x]
-	cmp eax, [@@pf.x1]
+	cmp eax, [ecx + newPlatform.x1]
 	jg @@nocol
 	
 	add eax, [ebx + character.w]
-	cmp eax, [@@pf.x0]
+	cmp eax, [ecx + newPlatform.x0]
 	jle @@nocol
 	
 	call collision_down, [ebx + character.x], [ebx + character.y], [ebx + character.w], [ebx + character.h], \
-		[@@pf.x0], [@@pf.y0], [@@pf.x1], [@@pf.y1]
+		[ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
 	je @@nocol
 	; if we're here, there's a collision
@@ -207,12 +218,12 @@ PROC x_collision
 	; leftwards
 	; this means that char came from the rightmost side of pf 
 	; so move char back to the rightmost side of pf
-	mov eax, [@@pf.x1]
+	mov eax, [ecx + newPlatform.x1]
 	inc eax
 	mov [ebx + character.x], eax
 	
 @@rightwards:
-	mov eax, [@@pf.x0]
+	mov eax, [ecx + newPlatform.x0]
 	sub eax, [ebx + character.w]
 	mov [ebx + character.x], eax
 	ret
@@ -365,7 +376,6 @@ noUp:
 	mov eax, [mario.y]
 	cmp eax, SCRHEIGHT
 	jg dead
-	
 	; draw and update mario
 	mov eax, [mario.x]
 	mov ebx, [mario.y]
@@ -398,13 +408,14 @@ noJump:
 	cmp [mario.in_the_air], -1
 	je checkAllGrounds
 	
-	call checkMarioCollision, [mario.currentPlatform]
-	
+	call checkCharCollision, offset mario, [mario.currentPlatform]
+	call x_collision, offset mario, offset ground1
+	call x_collision, offset mario, offset testground
 	jmp rest
 	
 checkAllGrounds:
-	call checkMarioCollision, offset ground1
-	call checkMarioCollision, offset testground
+	call checkCharCollision, offset mario, offset ground1
+	call checkCharCollision, offset mario, offset testground
 	
 rest:
 	; reset mario's speed_x
@@ -430,11 +441,7 @@ DATASEG
 	ground2 platform <240,160,40,5,2h>
 	ground3 platform <180,140,40,5,2h>
 	ground4 platform <120,115,40,5,2h>
-	
-	platforms 	dd 0,190,320,10,25h
-				dd 240,160,40,5,25h
-				dd 180,140,40,5,25h
-				dd 120,115,40,5,25h
+	platformList dd ground1,ground2,ground3,ground4
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
