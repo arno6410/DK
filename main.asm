@@ -329,7 +329,7 @@ newgame:
 	call fillRect, 0, 0, 320, 200, 0h
 	
 	
-	call drawSprite, offset mariosprite, 50, 50, 16, 20
+	;call drawSprite, offset mariosprite, 50, 50, 16, 20
 	
 	call drawPlatforms
 	
@@ -402,10 +402,13 @@ noUp:
 ; TODO: clean this; this makes the color depend on whether mario is in the air
 	cmp [mario.in_the_air], -1
 	jne skippp
-	call fillRect, eax, ebx, [mario.w], [mario.h], 2h
+	;call fillRect, eax, ebx, [mario.w], [mario.h], 2h
+	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
 	jmp nxt
 skippp:
-	call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
+	;call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
+	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
+
 nxt:
 push eax
 	call drawPlatforms
@@ -417,6 +420,7 @@ push eax
 pop eax
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
+	
 	
 noJump:
 	; gravity
