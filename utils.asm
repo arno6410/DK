@@ -94,6 +94,35 @@ PROC displayString
 	RET	
 ENDP displayString
 
+; Draw a sprite
+PROC drawSprite
+	ARG @@sprite: dword, @@x: dword, @@y: dword, @@w: dword, @@h:dword
+	USES eax, ebx, ecx, edx, edi
+	
+	mov EDI, 0A0000h 			; start of video memory
+	add EDI, [@@x]
+	mov eax, 320
+	mul [@@y]
+	add EDI, eax
+	mov ebx, [@@sprite] ; sprite address
+	mov edx, [@@h]
+	
+@@nextRow:
+	mov ecx, [@@w]				; sprite width	
+	@@nextPixel:
+		mov al, [ebx]			; data
+		mov [EDI], al
+		inc EDI
+		inc ebx					; point to next byte
+		loop @@nextPixel
+	add EDI, 320
+	sub EDI, [@@w]
+	dec edx
+	jnz @@nextRow
+	
+	ret
+ENDP drawSprite
+
 ; wait for @@framecount frames
 proc wait_VBLANK
 	ARG @@framecount: word

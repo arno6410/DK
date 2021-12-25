@@ -331,6 +331,9 @@ newgame:
 	
 	call fillRect, 0, 0, 320, 200, 0h
 	
+	
+	;call drawSprite, offset mariosprite, 50, 50, 16, 20
+	
 	call drawPlatforms
 	
 mainloop:
@@ -402,10 +405,13 @@ noUp:
 ; TODO: clean this; this makes the color depend on whether mario is in the air
 	cmp [mario.in_the_air], -1
 	jne skippp
-	call fillRect, eax, ebx, [mario.w], [mario.h], 2h
+	;call fillRect, eax, ebx, [mario.w], [mario.h], 2h
+	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
 	jmp nxt
 skippp:
-	call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
+	;call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
+	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
+
 nxt:
 push eax
 	call drawPlatforms
@@ -417,6 +423,7 @@ push eax
 pop eax
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
+	
 	
 noJump:
 	; gravity
@@ -473,8 +480,27 @@ DATASEG
 	ladder2 newPlatform <70,70,80,70,20,65h>
 	ladder3 newPlatform <100,130,110,130,20,65h>
 	ladder4 newPlatform <150,70,160,70,20,65h>
-
 	
+	mariosprite db 0h, 0h, 0h, 0h, 0h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h 
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
+				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h
+				db 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h 
+				db 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
+				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
+				db 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
