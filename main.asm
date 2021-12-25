@@ -461,7 +461,7 @@ DATASEG
 	ground1 newPlatform <20,180,60,185,10,25h>
 	ground2 newPlatform <80,160,120,162,10,25h>
 	ground3 newPlatform <150,140,190,142,10,25h>
-	ground4 newPlatform <240,120,290,118,10,25h>
+	ground4 newPlatform <240,120,290,112,10,25h>
 	platformList dd ground1,ground2,ground3,ground4
 
 	openErrorMsg db "could not open file", 13, 10, '$'

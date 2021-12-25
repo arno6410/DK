@@ -273,26 +273,24 @@ PROC collision_down
 	mov [@@d_x], eax
 	
 	mov edx, [@@y1]
-	cmp edx, [@@y0]
+	sub edx, [@@y0]
+	mov [@@d_y], edx
 	jl @@upwards
 	
 	; special exception for point (x0,y0)
 	mov edx, [@@x0]
 	cmp edx, [@@rect.x]
-	jl @@skipThis
+	jl @@skipThis_d
 	mov edx, [@@rect.y]
 	add edx, [@@rect.h]
 	cmp edx, [@@y0]
-	jl @@skipThis
+	jl @@skipThis_d
 	mov eax, [@@y0]
 	sub eax, [@@rect.h]
 	ret
 	
-@@skipThis:
+@@skipThis_d:
 	; if y1 > y0 (downwards slope): check the bottom left corner of character
-	mov eax, [@@y1]
-	sub eax, [@@y0]
-	mov [@@d_y], eax
 	
 	; bottom left corner: (x, y+h)
 	; ebx contains d_x*(y+h-y0)
@@ -326,22 +324,33 @@ PROC collision_down
 	
 @@upwards:
 	; if y1 < y0 (upwards slope): check the bottom right corner of character
-	mov eax, [@@y0]
-	sub eax, [@@y1]
-	mov [@@d_y], eax
 	
+	; special exception for point (x0,y0)
+	mov edx, [@@rect.x]
+	add edx, [@@rect.w]
+	cmp edx, [@@x1]
+	jl @@skipThis_u
+	mov edx, [@@rect.y]
+	add edx, [@@rect.h]
+	cmp edx, [@@y1]
+	jl @@skipThis_u
+	mov eax, [@@y1]
+	sub eax, [@@rect.h]
+	ret
+	
+@@skipThis_u:
 	; bottom right corner: (x+w, y+h)
 	; ebx contains d_x*(y+h-y0)
 	mov edx, [@@rect.y]
 	add edx, [@@rect.h]
-	sub edx, [@@y0]
+	sub edx, [@@y1]
 	mov eax, [@@d_x]
 	mul edx
 	mov ebx, eax
 	
 	; ecx contains d_y*(x+w-x0)
 	mov edx, [@@rect.x]
-	sub edx, ecx
+	sub edx, [@@x1]
 	add edx, [@@rect.w]
 	mov eax, [@@d_y]
 	mul edx
@@ -349,23 +358,18 @@ PROC collision_down
 	
 	cmp ebx, ecx
 	jl @@noCollision
-	push edx
 	xor edx, edx
 	mov eax, ecx
 	div [@@d_x]
-	add eax, [@@y0]
+	add eax, [@@y1]
 	sub eax, [@@rect.h]
 	inc eax
-	pop edx
 	ret
 	
 @@noCollision:
 	mov eax, -1
 	ret
 	
-@@noCheck:
-	mov eax, [@@y0]
-	sub eax, [@@rect.h]
 	ret
 ENDP collision_down
 
