@@ -44,12 +44,14 @@ STRUC barrel
 ENDS barrel
 
 PROC drawPlatforms
-	USES eax, ecx
+	USES eax, ebx, ecx
 	
 	mov ecx, NUMOFL
 @@drawLadderLoop:
 	mov eax, [ladderList + 4*ecx-4]
-	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], [eax + newPlatform.color]
+	mov ebx, [eax + newPlatform.x1]
+	sub ebx, [eax + newPlatform.x0]
+	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
 	loop @@drawLadderLoop
 	
 	mov ecx, NUMOFPF
@@ -413,14 +415,9 @@ skippp:
 	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
 
 nxt:
-push eax
 	call drawPlatforms
-	mov eax, [mario.currentPlatform]
-;	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], 43h
 	
 	call wait_VBLANK, 3
-	
-pop eax
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
 	
