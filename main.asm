@@ -28,29 +28,7 @@ STRUC character
 	currentPlatform dd 0	; offset to current platform
 ENDS character
 
-STRUC rect
-	x	dd 0
-	y	dd 0
-	w	dd 0
-	h	dd 0
-ENDS rect
 
-STRUC platform
-	x 				dd 0		; x position
-	y				dd 0		; y position
-	w				dd 0		; width
-	h				dd 0		; height
-	color			dd 0		; color
-ENDS platform
-
-STRUC newPlatform
-	x0		dd 0
-	y0		dd 0
-	x1		dd 0
-	y1		dd 0
-	h		dd 0
-	color	dd 0
-ENDS newPlatform
 
 STRUC barrel
 	x				dd 0		; x position
@@ -70,9 +48,9 @@ PROC scrollUp
 	USES ebx
 	mov ebx, [@@n]
 	sub [mario.y], ebx
-	sub [ground2.y], ebx
-	sub [ground3.y], ebx
-	sub [ground4.y], ebx
+;	sub [ground2.y], ebx
+;	sub [ground3.y], ebx
+;	sub [ground4.y], ebx
 ENDP scrollUp
 
 PROC checkCharCollision
@@ -324,8 +302,13 @@ newgame:
 	mov [mario.currentPlatform], offset ground1
 	
 	call fillRect, 0, 0, 320, 200, 0h
-	call platform_both, [ground1.x0], [ground1.y0], [ground1.x1], [ground1.y1], [ground1.h], [ground1.color]
-	call platform_both, [testground.x0], [testground.y0], [testground.x1], [testground.y1], [testground.h], [testground.color]
+	
+	; ecx = number of platforms
+	mov ecx, 4
+drawPlatformLoop:
+	mov eax, [platformList + 4*ecx - 4]
+	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], [eax + newPlatform.color]
+	loop drawPlatformLoop
 	
 mainloop:
 	
@@ -413,17 +396,24 @@ noJump:
 	inc [mario.speed_y]
 	
 ; check for collision
+	; if mario is in the air, currentPlatform can change
+	mov ecx, 4
 	cmp [mario.in_the_air], -1
 	je checkAllGrounds
 	
 	call checkCharCollision, offset mario, [mario.currentPlatform]
-	call x_collision, offset mario, offset ground1
-	call x_collision, offset mario, offset testground
+;	call x_collision, offset mario, offset ground1
+;	call x_collision, offset mario, offset testground
+	
+checkX_collisionLoop:
+	call x_collision, offset mario, [platformList + 4*ecx - 4]
+	loop checkX_collisionLoop
+	
 	jmp rest
 	
 checkAllGrounds:
-	call checkCharCollision, offset mario, offset ground1
-	call checkCharCollision, offset mario, offset testground
+	call checkCharCollision, offset mario, [platformList + 4*ecx - 4]
+	loop checkAllGrounds
 	
 rest:
 	; reset mario's speed_x
@@ -445,10 +435,10 @@ ENDP main
 DATASEG
 	mario character <40,60,0,0,16,20,33h,1>
 	testground newPlatform <150,162,190,167,10,25h>
-	ground1 newPlatform <15, 180, 295, 185, 10, 25h>
-	ground2 platform <240,160,40,5,2h>
-	ground3 platform <180,140,40,5,2h>
-	ground4 platform <120,115,40,5,2h>
+	ground1 newPlatform <15,180,295,185,10,25h>
+	ground2 newPlatform <240,160,280,162,5,25h>
+	ground3 newPlatform <180,140,220,142,5,25h>
+	ground4 newPlatform <120,115,150,118,5,25h>
 	platformList dd ground1,ground2,ground3,ground4
 
 	openErrorMsg db "could not open file", 13, 10, '$'

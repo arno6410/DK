@@ -11,13 +11,6 @@ CODESEG
 
 INCLUDE "rect.inc"
 
-STRUC rect
-	x	dd 0
-	y	dd 0
-	w	dd 0
-	h	dd 0
-ENDS rect
-
 ; Draw a filled rectangle
 PROC fillRect
 	ARG @@x0: word, @@y0: word, @@w: word, @@h: word, @@col: byte
