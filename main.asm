@@ -328,8 +328,7 @@ newgame:
 	
 	call fillRect, 0, 0, 320, 200, 0h
 	
-	
-	;call drawSprite, offset mariosprite, 50, 50, 16, 20
+	;call drawSprite, offset barrelsprite, 50, 50, 16, 16
 	
 	call drawPlatforms
 	
@@ -491,6 +490,23 @@ DATASEG
 				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
 				db 0h, 0h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
 				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+				
+	barrelsprite 	db 00h, 00h, 00h, 00h, 00h, 41h, 41h, 41h, 41h, 41h, 41h, 00h, 00h, 00h, 00h, 00h
+					db 00h, 00h, 00h, 41h, 41h, 41h, 43h, 43h, 43h, 43h, 41h, 41h, 41h, 00h, 00h, 00h 
+					db 00h, 00h, 41h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 41h, 00h, 00h 
+					db 00h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 00h 
+					db 00h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 00h 
+					db 41h, 41h, 43h, 43h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 43h, 43h, 41h, 41h 
+					db 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h
+					db 41h, 43h, 43h, 41h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 41h, 43h, 43h, 41h 
+					db 41h, 43h, 43h, 41h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 41h, 43h, 43h, 41h
+					db 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h		
+					db 41h, 41h, 43h, 43h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 43h, 43h, 41h, 41h
+					db 00h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 00h
+					db 00h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 00h
+					db 00h, 00h, 41h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 41h, 00h, 00h
+					db 00h, 00h, 00h, 41h, 41h, 41h, 43h, 43h, 43h, 43h, 41h, 41h, 41h, 00h, 00h, 00h 
+					db 00h, 00h, 00h, 00h, 00h, 41h, 41h, 41h, 41h, 41h, 41h, 00h, 00h, 00h, 00h, 00h
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
