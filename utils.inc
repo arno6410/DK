@@ -4,4 +4,5 @@ GLOBAL 	setVideoMode:PROC, \
 	printUnsignedInteger: PROC, \
 	displayString: PROC, \
 	drawSprite: PROC, \
+	drawSprite_mirrored: PROC, \
 	wait_VBLANK:PROC

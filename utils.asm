@@ -43,55 +43,22 @@ PROC terminateProcess
 	int 21h
 	
 	ret
-ENDP terminateProcess	
-
-PROC printUnsignedInteger
-	ARG @@number: dword
-	USES eax, ebx, ecx, edx
-	
-	; the number to be printed
-	mov eax, [@@number]
-	mov ebx, 10
-	xor ecx, ecx
-	
-@@getNextDigit:
-	inc ecx
-	xor edx, edx
-	div ebx
-	push dx
-	test eax, eax
-	jnz @@getNextDigit
-	
-	mov ah, 2h
-@@printDigits:
-	pop dx
-	add dl, '0'
-	int 21h
-	loop @@printDigits
-	
-	; \r\n
-;	mov dl, 0Dh
-;	int 21h
-;	mov dl, 0Ah
-;	int 21h
-	
-	ret
-ENDP printUnsignedInteger
+ENDP terminateProcess
 
 PROC displayString
-	ARG @@row:DWORD, @@column:DWORD, @@offset:DWORD
-	USES EAX, EBX, EDX
-	MOV EDX, [@@row] ; row in EDX
-	MOV EBX, [@@column] ; column in EBX
-	MOV AH, 02H ; set cursor position
-	SHL EDX, 08H ; row in DH (00H is top)
-	MOV DL, BL ; column in DL (00H is left)
-	MOV BH, 0 ; page number in BH
-	INT 10H ; raise interrupt
-	MOV AH, 09H ; write string to standard output
-	MOV EDX, [@@offset] ; offset of ’$’-terminated string in EDX
-	INT 21H ; raise interrupt
-	RET	
+	ARG @@row:dword, @@column:dword, @@offset:dword
+	USES eax, ebx, edx
+	mov edx, [@@row] ; row in edx
+	mov ebx, [@@column] ; column in ebx
+	mov ah, 02h ; set cursor position
+	shl edx, 08h ; row in dh (00h is top)
+	mov dl, bl ; column in dl (00h is left)
+	mov bh, 0 ; page number in bh
+	int 10h ; raise interrupt
+	mov ah, 09h ; write string to standard output
+	mov edx, [@@offset] ; offset of ’$’-terminated string in edx
+	int 21h ; raise interrupt
+	ret	
 ENDP displayString
 
 ; Draw a sprite
@@ -99,11 +66,11 @@ PROC drawSprite
 	ARG @@sprite: dword, @@x: dword, @@y: dword, @@w: dword, @@h:dword
 	USES eax, ebx, ecx, edx, edi
 	
-	mov EDI, 0A0000h 			; start of video memory
-	add EDI, [@@x]
-	mov eax, 320
+	mov edi, VMEMADR 			; start of video memory
+	add edi, [@@x]
+	mov eax, SCRWIDTH
 	mul [@@y]
-	add EDI, eax
+	add edi, eax
 	mov ebx, [@@sprite] ; sprite address
 	mov edx, [@@h]
 	
@@ -111,17 +78,49 @@ PROC drawSprite
 	mov ecx, [@@w]				; sprite width	
 	@@nextPixel:
 		mov al, [ebx]			; data
-		mov [EDI], al
-		inc EDI
+		stosb
 		inc ebx					; point to next byte
 		loop @@nextPixel
-	add EDI, 320
-	sub EDI, [@@w]
+	add edi, SCRWIDTH
+	sub edi, [@@w]
 	dec edx
 	jnz @@nextRow
 	
 	ret
 ENDP drawSprite
+
+; Draw a sprite
+PROC drawSprite_mirrored
+	ARG @@sprite: dword, @@x: dword, @@y: dword, @@w: dword, @@h:dword
+	USES eax, ebx, ecx, edx, edi
+	
+	std
+	
+	mov edi, VMEMADR 			; start of video memory
+	add edi, [@@x]
+	mov eax, SCRWIDTH
+	mul [@@y]
+	add edi, eax
+	add edi, [@@w]
+	dec edi
+	mov ebx, [@@sprite] ; sprite address
+	mov edx, [@@h]
+	
+@@nextRow:
+	mov ecx, [@@w]				; sprite width	
+	@@nextPixel:
+		mov al, [ebx]			; data
+		stosb
+		inc ebx					; point to next byte
+		loop @@nextPixel
+	add edi, SCRWIDTH
+	add edi, [@@w]
+	dec edx
+	jnz @@nextRow
+	
+	cld
+	ret
+ENDP drawSprite_mirrored
 
 ; wait for @@framecount frames
 proc wait_VBLANK
