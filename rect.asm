@@ -280,13 +280,13 @@ PROC collision_down
 	mov edx, [@@x0]
 	cmp edx, [@@rect.x]
 	jl @@skipThis
-;	mov edx, [@@rect.y]
-;	cmp edx, [@@y0]
-;	jle @@skipThis
+	mov edx, [@@rect.y]
 	add edx, [@@rect.h]
 	cmp edx, [@@y0]
-	jge @@noCheck
-	
+	jl @@skipThis
+	mov eax, [@@y0]
+	sub eax, [@@rect.h]
+	ret
 	
 @@skipThis:
 	; if y1 > y0 (downwards slope): check the bottom left corner of character
@@ -368,6 +368,53 @@ PROC collision_down
 	sub eax, [@@rect.h]
 	ret
 ENDP collision_down
+
+; check whether a point (x,y) lies above or under the line going from (x0,y0) to (x1,y1)
+; above -> eax = -1
+; under -> eax = correct y-value
+PROC pointLineCheck
+	ARG @@x: dword, @@y: dword, @@x0: dword, @@y0: dword, @@x1: dword, @@y1: dword RETURNS eax
+	LOCAL @@d_x: dword, @@d_y: dword
+	USES ebx, ecx, edx
+	
+	mov eax, [@@y1]
+	sub eax, [@@y0]
+	mov [@@d_y], eax
+	mov eax, [@@x1]
+	sub eax, [@@x0]
+	mov [@@d_x], eax
+	
+	; ebx contains d_x*(y-y0)
+	mov edx, [@@y]
+	sub edx, [@@y0]
+	dec edx ; hackje om ervoor te zorgen dat raken != overlappen
+	mov eax, [@@d_x]
+	mul edx
+	mov ebx, eax
+	
+	; ecx contains d_y*(x-x0)
+	mov edx, [@@x]
+	sub edx, [@@x0]
+	mov eax, [@@d_y]
+	mul edx
+	mov ecx, eax
+	
+	cmp ebx, ecx
+	jl @@noCollision
+	; ecx/d_x = d_y/d_x * (x-x0) -> y-y0 op rechte -> +y0 doen -> y waarde op rechte
+	push edx
+	xor edx, edx
+	mov eax, ecx
+	div [@@d_x]
+	add eax, [@@y0]
+	inc eax
+	pop edx
+	ret
+	
+@@noCollision:
+	mov eax, -1
+	ret
+ENDP pointLineCheck
 
 ; Draws the 'fixed' rect
 PROC drawRects

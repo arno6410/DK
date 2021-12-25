@@ -60,24 +60,41 @@ PROC checkCharCollision
 	mov ebx, [@@o_char]
 	mov ecx, [@@o_pf]
 	
+	; check if the char is under the platform
+	; only if speed_y < 0
+;	cmp [ebx + character.speed_y], 0
+;	jg @@speedYpos
+	mov eax, [ecx + newPlatform.y0]
+	add eax, [ecx + newPlatform.h]
+	cmp eax, [ebx + character.y]
+	jl @@nocol
+	
+@@speedYpos:
+	
 	mov eax, [ebx + character.x]
 	cmp eax, [ecx + newPlatform.x1]
-	jg @@yep
+	jg @@noXoverlap
 	add eax, [ebx + character.w]
 	cmp eax, [ecx + newPlatform.x0]
-	jl @@yep
-	jmp @@check
-@@yep:
+	jge @@check
+	
+@@noXoverlap:
 	cmp [ebx + character.currentPlatform], ecx
-	jne @@nocol
+	je @@nocol
 	mov [ebx + character.in_the_air], -1
 	ret
+	
 	; check for collision	
 @@check:
 	call collision_down, [ebx + character.x], [ebx + character.y], [ebx + character.w], [ebx + character.h], \
 	 [ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
 	je @@in_the_air
+	
+	; only if speed_y > 0
+	cmp [ebx + character.speed_y], 0
+	jl @@in_the_air
+	
 	; collision!
 	mov [ebx + character.speed_y], 0
 	mov [ebx + character.in_the_air], 0
@@ -91,7 +108,6 @@ PROC checkCharCollision
 	call collision_down, [ebx + character.x], eax, [ebx + character.w], [ebx + character.h], \
 	 [ecx + newPlatform.x0], [ecx + newPlatform.y0], [ecx + newPlatform.x1], [ecx + newPlatform.y1]
 	cmp eax, -1
-;	mov [ebx + character.in_the_air], 0
 	jne @@nocol
 	mov [ebx + character.in_the_air], -1
 @@nocol:
@@ -180,6 +196,18 @@ PROC x_collision
 	
 	cmp [ebx + character.currentPlatform], ecx
 	je @@nocol
+	
+	; check if the char is under the platform
+	; only if speed_y < 0
+;	cmp [ebx + character.speed_y], 0
+;	jg @@speedYpos
+	mov eax, [ecx + newPlatform.y0]
+	add eax, [ecx + newPlatform.h]
+	cmp eax, [ebx + character.y]
+	jl @@nocol
+	
+@@speedYpos:
+
 	
 	mov eax, [ebx + character.x]
 	cmp eax, [ecx + newPlatform.x1]
