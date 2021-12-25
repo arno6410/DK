@@ -297,7 +297,6 @@ PROC collision_down
 	mov edx, [@@rect.y]
 	add edx, [@@rect.h]
 	sub edx, [@@y0]
-	dec edx ; hackje om ervoor te zorgen dat raken != overlappen
 	mov eax, [@@d_x]
 	mul edx
 	mov ebx, eax

@@ -251,6 +251,38 @@ PROC x_collision
 	ret
 ENDP x_collision
 
+
+PROC collision
+	ARG @@o_char: dword
+	USES eax, ebx, ecx
+	
+	mov ebx, [@@o_char]
+	
+; check for collision
+	; if mario is in the air, currentPlatform can change
+	; by increasing ecx, we make sure the ladders are also included
+	mov ecx, NUMOFPF + NUMOFL
+	cmp [ebx + character.in_the_air], -1
+	je @@checkAllGrounds
+	
+	call checkCharCollision, ebx, [ebx + character.currentPlatform]
+@@checkX_collisionLoop:
+	call x_collision, ebx, [platformList + 4*ecx-4]
+	loop @@checkX_collisionLoop
+	jmp @@rest
+	
+@@checkAllGrounds:
+	mov [ebx + character.currentPlatform], 0
+	call checkCharCollision, ebx, [platformList + 4*ecx-4]
+	mov eax, [ebx + character.currentPlatform]
+	cmp eax, [platformList + 4*ecx - 4]
+	je @@rest
+	loop @@checkAllGrounds
+	
+@@rest:
+	ret
+ENDP collision
+
 PROC main
 	sti
 	cld
@@ -403,9 +435,6 @@ noUp:
 	cmp eax, SCRHEIGHT
 	jg dead
 	; draw and update mario
-	mov eax, [mario.x]
-	mov ebx, [mario.y]
-	
 	mov ecx, [mario.speed_x]
 	add [mario.x], ecx
 	mov edx, [mario.speed_y]
@@ -413,57 +442,51 @@ noUp:
 	
 	mov ecx, [barrel1.speed_x]
 	add [barrel1.x], ecx
-	; mov ecx, [barrel1.speed_y]
-	; add [barrel1.y], ecx
+	mov ecx, [barrel1.speed_y]
+	add [barrel1.y], ecx
 	
 	cmp [mario.speed_x], 0
 	jl drawLeft
-	call drawSprite, offset mariospriteright, eax, ebx, [mario.w], [mario.h]
+	call drawSprite, offset mariospriteright, [mario.x], [mario.y], [mario.w], [mario.h]
 	jmp skipLeft
 	
 drawLeft:
-	call drawSprite, offset mariospriteleft, eax, ebx, [mario.w], [mario.h]
+	call drawSprite, offset mariospriteleft, [mario.x], [mario.y], [mario.w], [mario.h]
 	
 skipLeft:
 	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
-	
 	call drawPlatforms
 	
 	call wait_VBLANK, 3
-	; undraw mario
-	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
-	call fillRect, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h], 0h	
+	; undraw mario and the barrels
+	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 0h	
+	call fillRect, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h], 0h
 	
-	
-noJump:
 	; gravity
 	inc [mario.speed_y]
 	inc [barrel1.speed_y]
-	
-; check for collision
-	; if mario is in the air, currentPlatform can change
-	; by increasing ecx, we make sure the ladders are also included
-	mov ecx, NUMOFPF + NUMOFL
-	cmp [mario.in_the_air], -1
-	je checkAllGrounds
-	
-	call checkCharCollision, offset mario, [mario.currentPlatform]
-checkX_collisionLoop:
-	call x_collision, offset mario, [platformList + 4*ecx-4]
-	loop checkX_collisionLoop
-	jmp rest
-	
-checkAllGrounds:
-	mov [mario.currentPlatform], 0
-	call checkCharCollision, offset mario, [platformList + 4*ecx-4]
-	mov eax, [mario.currentPlatform]
-	cmp eax, [platformList + 4*ecx - 4]
-	je rest
-	loop checkAllGrounds
+
+	call collision, offset mario
+	call collision, offset barrel1
 	
 rest:
 	; reset mario's speed_x
 	mov [mario.speed_x], 0
+	
+	; whether the barrel goes right or left depends on the slope of the current platform
+	; reset speed_x -> the barrel doesn't move horizontally while in the air
+	mov [barrel1.speed_x], 0
+	cmp [barrel1.in_the_air], -1
+	je mainloop
+	mov eax, [barrel1.currentPlatform]
+	mov ebx, [eax + newPlatform.y1]
+	cmp ebx, [eax + newPlatform.y0]
+	jle downwards
+	mov [barrel1.speed_x], 3
+	jmp mainloop
+downwards:
+	mov [barrel1.speed_x], -3
+	
 	jmp mainloop
 	
 dead:
@@ -485,7 +508,7 @@ DATASEG
 	ground2 newPlatform <25,110,270,120,10,25h>
 	ground3 newPlatform <50,60,295,50,10,25h>
 ;	ground4 newPlatform <40,60,295,50,10,25h>
-; BELANGRIJK: uplist moet juist na platformlist komen
+; BELANGRIJK: ladderList moet juist na platformlist komen
 	platformList dd ground1,ground2,ground3
 	ladderList dd ladder1,ladder2,ladder3,ladder4
 	ladder1 newPlatform <250,130,260,130,20,65h>
