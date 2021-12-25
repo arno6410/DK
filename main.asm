@@ -328,6 +328,9 @@ newgame:
 	
 	call fillRect, 0, 0, 320, 200, 0h
 	
+	
+	call drawSprite, offset mariosprite, 50, 50, 16, 20
+	
 	call drawPlatforms
 	
 mainloop:
@@ -463,6 +466,27 @@ DATASEG
 	ground3 newPlatform <150,140,190,142,10,25h>
 	ground4 newPlatform <240,120,290,112,10,25h>
 	platformList dd ground1,ground2,ground3,ground4
+	
+	mariosprite db 0h, 0h, 0h, 0h, 0h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h 
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
+				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h 
+				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h
+				db 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h 
+				db 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
+				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
+				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
+				db 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
