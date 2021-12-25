@@ -11,7 +11,7 @@ KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
 JUMP EQU 5			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
 NUMOFPF EQU 3		; number of platforms
-NUMOFL EQU 4		; number of ladders
+NUMOFL EQU 5		; number of ladders
 
 CODESEG
 
@@ -378,8 +378,8 @@ newgame:
 	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
 	
 	mov ecx, 50
-mainloop:
 	push ecx
+mainloop:
 	
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
@@ -433,9 +433,12 @@ noRight:
 	
 noUp:
 	; check dat y niet > SCRHEIGHT -> anders dood
-	mov eax, [mario.y]
-	cmp eax, SCRHEIGHT
+	cmp [mario.y], SCRHEIGHT
 	jg dead
+	
+	cmp [mario.y], 0
+	jle won
+	
 	; draw and update mario
 	mov ecx, [mario.speed_x]
 	add [mario.x], ecx
@@ -499,6 +502,14 @@ dead:
 	call wait_VBLANK, 60
 	jmp mainMenu
 	
+won:
+	call fillRect, 0, 0, 320, 200, 0h
+	call displayString, 7, 2, offset won_message
+	call UInt_str, [score], offset score_message
+	call displayString, 8, 2, offset score_message
+	call wait_VBLANK, 60
+	jmp mainMenu
+	
 exit:
 	call __keyb_uninstallKeyboardHandler
 	call terminateProcess
@@ -514,11 +525,12 @@ DATASEG
 ;	ground4 newPlatform <40,60,295,50,10,25h>
 ; BELANGRIJK: ladderList moet juist na platformlist komen
 	platformList dd ground1,ground2,ground3
-	ladderList dd ladder1,ladder2,ladder3,ladder4
+	ladderList dd ladder1,ladder2,ladder3,ladder4,ladder5
 	ladder1 newPlatform <250,130,260,130,20,65h>
 	ladder2 newPlatform <70,70,80,70,20,65h>
 	ladder3 newPlatform <100,130,110,130,20,65h>
 	ladder4 newPlatform <150,70,160,70,20,65h>
+	ladder5 newPlatform <290,0,300,0,20,65h>
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
 				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h 
@@ -541,6 +553,27 @@ DATASEG
 				db 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
 				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
 	
+	mariospriteleft db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h 
+				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h 
+				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h 
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
+				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
+				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h
+				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h 
+				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h
+				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah
+				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				
 	barrelsprite 	db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
 					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
 					db 00h, 00h, 40h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 40h, 00h, 00h 
@@ -563,6 +596,9 @@ DATASEG
 	closeErrorMsg db "error during file closing", 13, 10, '$'
 	
 	dead_message db "ded.",13,10,'$'
+	won_message db "yes",13,10,'$'
+	score dd 0
+	score_message db 0,0,0,0,0,0,0,'$'
 
 	msg1 	db "New Game", 13, 10, '$'
 	msg2 	db "Exit", 13, 10, '$'
@@ -575,6 +611,7 @@ DATASEG
 UDATASEG;
 	;filehandle dw ?
 	;packedframe db FRAMESIZE dup (?)
+	
 
 	
 STACK 100h

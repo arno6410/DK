@@ -1,7 +1,7 @@
 GLOBAL 	setVideoMode:PROC, \
 	waitForSpecificKeystroke:PROC, \
 	terminateProcess:PROC, \
-	printUnsignedInteger: PROC, \
+	UInt_str: PROC, \
 	displayString: PROC, \
 	drawSprite: PROC, \
 	drawSprite_mirrored: PROC, \
