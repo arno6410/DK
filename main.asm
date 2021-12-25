@@ -27,7 +27,7 @@ STRUC character
 	w				dd 16	; width
 	h 				dd 20	; height
 	color 			dd 33h	; color
-	in_the_air dd 0	; mario currently in the air? (-1 if yes, 0 if not)
+	in_the_air 		dd 0	; mario currently in the air? (-1 if yes, 0 if not)
 	currentPlatform dd 0	; offset to current platform
 ENDS character
 
@@ -96,7 +96,7 @@ PROC checkCharCollision
 @@noXoverlap:
 	mov [ebx + character.in_the_air], -1
 	cmp [ebx + character.currentPlatform], ecx
-	je @@nocol
+	je SHORT @@nocol
 	ret
 	
 	; check for collision	
@@ -331,11 +331,19 @@ newgame:
 	mov [mario.in_the_air], -1
 	mov [mario.currentPlatform], 0
 	
+	mov [barrel1.x], 250
+	mov [barrel1.y], 20
+	mov [barrel1.speed_x], 0
+	mov [barrel1.speed_y], 0
+	mov [barrel1.h], 16
+	mov [barrel1.in_the_air], -1
+	mov [barrel1.currentPlatform], 0
+	
 	call fillRect, 0, 0, 320, 200, 0h
 	
-	;call drawSprite, offset barrelsprite, 50, 50, 16, 16
-	
 	call drawPlatforms
+	
+	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
 	
 mainloop:
 	
@@ -403,27 +411,34 @@ noUp:
 	mov edx, [mario.speed_y]
 	add [mario.y], edx
 	
-; TODO: clean this; this makes the color depend on whether mario is in the air
-	cmp [mario.in_the_air], -1
-	jne skippp
-	;call fillRect, eax, ebx, [mario.w], [mario.h], 2h
-	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
-	jmp nxt
-skippp:
-	;call fillRect, eax, ebx, [mario.w], [mario.h], [mario.color]
-	call drawSprite, offset mariosprite, eax, ebx, [mario.w], [mario.h]
-
-nxt:
+	mov ecx, [barrel1.speed_x]
+	add [barrel1.x], ecx
+	; mov ecx, [barrel1.speed_y]
+	; add [barrel1.y], ecx
+	
+	cmp [mario.speed_x], 0
+	jl drawLeft
+	call drawSprite, offset mariospriteright, eax, ebx, [mario.w], [mario.h]
+	jmp skipLeft
+	
+drawLeft:
+	call drawSprite, offset mariospriteleft, eax, ebx, [mario.w], [mario.h]
+	
+skipLeft:
+	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
+	
 	call drawPlatforms
 	
 	call wait_VBLANK, 3
 	; undraw mario
 	call fillRect, eax, ebx, [mario.w], [mario.h], 0h	
+	call fillRect, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h], 0h	
 	
 	
 noJump:
 	; gravity
 	inc [mario.speed_y]
+	inc [barrel1.speed_y]
 	
 ; check for collision
 	; if mario is in the air, currentPlatform can change
@@ -465,6 +480,7 @@ ENDP main
 
 DATASEG
 	mario character <>
+	barrel1 character <>
 	ground1 newPlatform <25,180,295,170,10,25h>
 	ground2 newPlatform <25,110,270,120,10,25h>
 	ground3 newPlatform <50,60,295,50,10,25h>
@@ -477,43 +493,64 @@ DATASEG
 	ladder3 newPlatform <100,130,110,130,20,65h>
 	ladder4 newPlatform <150,70,160,70,20,65h>
 	
-	mariosprite db 0h, 0h, 0h, 0h, 0h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
-				db 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h 
-				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
-				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h 
-				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h 
-				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h 
-				db 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h
-				db 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h 
-				db 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h
-				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h
-				db 0h, 0h, 0h, 0h, 7h, 7h, 7h, 7h, 7h, 7h, 0h, 0h, 0h, 0h, 0h, 0h
-				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
-				db 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
-				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
-				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
-				db 7h, 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 7h, 7h
-				db 7h, 7h, 7h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 7h, 7h, 7h, 0h
-				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h
-				db 0h, 0h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
-				db 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 0h, 0h
+	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h 
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h 
+				db 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h 
+				db 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h 
+				db 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h 
+				db 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h
+				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h 
+				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h
+				db 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 00h
+				db 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+	
+	mariospriteleft db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h 
+				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h 
+				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h 
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
+				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
+				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h
+				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h 
+				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
+				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h
+				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
+				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah
+				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h
+				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
 				
-	barrelsprite 	db 00h, 00h, 00h, 00h, 00h, 41h, 41h, 41h, 41h, 41h, 41h, 00h, 00h, 00h, 00h, 00h
-					db 00h, 00h, 00h, 41h, 41h, 41h, 43h, 43h, 43h, 43h, 41h, 41h, 41h, 00h, 00h, 00h 
-					db 00h, 00h, 41h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 41h, 00h, 00h 
-					db 00h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 00h 
-					db 00h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 00h 
-					db 41h, 41h, 43h, 43h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 43h, 43h, 41h, 41h 
-					db 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h
-					db 41h, 43h, 43h, 41h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 41h, 43h, 43h, 41h 
-					db 41h, 43h, 43h, 41h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 41h, 43h, 43h, 41h
-					db 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h, 41h, 43h, 43h, 41h		
-					db 41h, 41h, 43h, 43h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 43h, 43h, 41h, 41h
-					db 00h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 41h, 41h, 43h, 43h, 41h, 00h
-					db 00h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 41h, 41h, 43h, 43h, 43h, 41h, 41h, 00h
-					db 00h, 00h, 41h, 41h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 43h, 41h, 41h, 00h, 00h
-					db 00h, 00h, 00h, 41h, 41h, 41h, 43h, 43h, 43h, 43h, 41h, 41h, 41h, 00h, 00h, 00h 
-					db 00h, 00h, 00h, 00h, 00h, 41h, 41h, 41h, 41h, 41h, 41h, 00h, 00h, 00h, 00h, 00h
+	barrelsprite 	db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
+					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
+					db 00h, 00h, 40h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 40h, 00h, 00h 
+					db 00h, 40h, 40h, 42h, 42h, 42h, 40h, 40h, 40h, 40h, 42h, 42h, 42h, 40h, 40h, 00h 
+					db 00h, 40h, 42h, 42h, 40h, 40h, 40h, 42h, 42h, 40h, 40h, 40h, 42h, 42h, 40h, 00h 
+					db 40h, 40h, 42h, 42h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 42h, 42h, 40h, 40h 
+					db 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h
+					db 40h, 42h, 42h, 40h, 42h, 42h, 40h, 40h, 40h, 40h, 42h, 42h, 40h, 42h, 42h, 40h 
+					db 40h, 42h, 42h, 40h, 42h, 42h, 40h, 40h, 40h, 40h, 42h, 42h, 40h, 42h, 42h, 40h
+					db 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h, 40h, 42h, 42h, 40h		
+					db 40h, 40h, 42h, 42h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 42h, 42h, 40h, 40h
+					db 00h, 40h, 42h, 42h, 40h, 40h, 40h, 42h, 42h, 40h, 40h, 40h, 42h, 42h, 40h, 00h
+					db 00h, 40h, 40h, 42h, 42h, 42h, 40h, 40h, 40h, 40h, 42h, 42h, 42h, 40h, 40h, 00h
+					db 00h, 00h, 40h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 40h, 00h, 00h
+					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
+					db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
 
 	openErrorMsg db "could not open file", 13, 10, '$'
 	readErrorMsg db "could not read data", 13, 10, '$'
