@@ -9,8 +9,9 @@ SCRHEIGHT EQU 200	; screen height
 FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
-JUMP EQU 8			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
-NUMOFPF EQU 4		; number of platforms
+JUMP EQU 5			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
+NUMOFPF EQU 3		; number of platforms
+NUMOFL EQU 4		; number of ladders
 
 CODESEG
 
@@ -23,9 +24,9 @@ STRUC character
 	y				dd 0	; y position
 	speed_x			dd 0	; x speedcomponent
 	speed_y			dd 0	; y speedcomponent
-	w				dd 0	; width
-	h 				dd 0	; height
-	color 			dd 0	; color
+	w				dd 16	; width
+	h 				dd 20	; height
+	color 			dd 33h	; color
 	in_the_air dd 0	; mario currently in the air? (-1 if yes, 0 if not)
 	currentPlatform dd 0	; offset to current platform
 ENDS character
@@ -44,11 +45,16 @@ ENDS barrel
 
 PROC drawPlatforms
 	USES eax, ecx
-
-	; ecx = number of platforms
+	
+	mov ecx, NUMOFL
+@@drawLadderLoop:
+	mov eax, [ladderList + 4*ecx-4]
+	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], [eax + newPlatform.color]
+	loop @@drawLadderLoop
+	
 	mov ecx, NUMOFPF
 @@drawPlatformLoop:
-	mov eax, [platformList + 4*ecx-4]
+	mov eax, [platformList + 4*ecx - 4]
 	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], [eax + newPlatform.color]
 	loop @@drawPlatformLoop
 	
@@ -316,15 +322,12 @@ checkEsc:
 	
 newgame:
 	; (re-)initialise mario
-	; mario character <40,60,0,0,16,20,33h,0,0,0>
-	mov [mario.x], 100
-	mov [mario.y], 60
+	mov [mario.x], 30
+	mov [mario.y], 160
 	mov [mario.speed_x], 0
 	mov [mario.speed_y], 0
-	mov [mario.w], 16
-	mov [mario.h], 20
 	mov [mario.in_the_air], -1
-	mov [mario.currentPlatform], offset ground2
+	mov [mario.currentPlatform], 0
 	
 	call fillRect, 0, 0, 320, 200, 0h
 	
@@ -427,7 +430,8 @@ noJump:
 	
 ; check for collision
 	; if mario is in the air, currentPlatform can change
-	mov ecx, NUMOFPF
+	; by increasing ecx, we make sure the ladders are also included
+	mov ecx, NUMOFPF + NUMOFL
 	cmp [mario.in_the_air], -1
 	je checkAllGrounds
 	
@@ -463,12 +467,18 @@ exit:
 ENDP main	
 
 DATASEG
-	mario character <40,60,0,0,16,20,33h,1>
-	ground1 newPlatform <20,180,60,185,10,25h>
-	ground2 newPlatform <80,160,120,162,10,25h>
-	ground3 newPlatform <150,140,190,142,10,25h>
-	ground4 newPlatform <240,120,290,112,10,25h>
-	platformList dd ground1,ground2,ground3,ground4
+	mario character <>
+	ground1 newPlatform <25,180,295,170,10,25h>
+	ground2 newPlatform <25,110,270,120,10,25h>
+	ground3 newPlatform <50,60,295,50,10,25h>
+;	ground4 newPlatform <40,60,295,50,10,25h>
+; BELANGRIJK: uplist moet juist na platformlist komen
+	platformList dd ground1,ground2,ground3
+	ladderList dd ladder1,ladder2,ladder3,ladder4
+	ladder1 newPlatform <250,130,260,130,20,65h>
+	ladder2 newPlatform <70,70,80,70,20,65h>
+	ladder3 newPlatform <100,130,110,130,20,65h>
+	ladder4 newPlatform <150,70,160,70,20,65h>
 	
 	mariosprite db 0h, 0h, 0h, 0h, 0h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h, 0h, 0h, 0h
 				db 0h, 0h, 0h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 9h, 0h, 0h, 0h, 0h, 0h 
