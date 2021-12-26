@@ -44,7 +44,7 @@ PROC drawPlatforms
 	mov eax, [ladderList + 4*ecx-4]
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
-	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, 51, [eax + newPlatform.color]
 	loop @@drawLadderLoop
 	
 	mov ecx, NUMOFPF
@@ -578,7 +578,7 @@ DATASEG
 
 	ladder1 newPlatform <254,130,264,130,20,65h>
 	ladder2 newPlatform <60,68,70,68,20,65h>
-	ladder3 newPlatform <290,0,300,0,20,65h>
+	ladder3 newPlatform <285,0,295,0,20,65h>
 	
 	barrel1 character <-1,,,,,,,,>
 	barrel2 character <-1,,,,,,,,>
@@ -643,57 +643,6 @@ DATASEG
 	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
 	
 	game_title			db "DINKOY KING", 13, 10,'$'
-	
-	laddersprite 	dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
-				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
 
 UDATASEG
 	
