@@ -40,15 +40,20 @@ STRUC screen
 	ladders			dd ladderList1		; array with ladders
 ENDS screen
 
+; macro that calculates the offset to the current screen in screenList
+MACRO screen_pointer_offset
+	mov edx, [mario.currentScreen]
+	dec edx
+	mov eax, 16
+	mul edx
+	mov edx, eax
+ENDM screen_pointer_offset
+
 PROC drawPlatforms
 	LOCAL @@platforms: dword, @@ladders: dword
 	USES eax, ebx, ecx, edx
 	
-	mov edx, [mario.currentScreen]
-	dec edx
-	mov eax, 8
-	mul edx
-	mov edx, eax
+	screen_pointer_offset
 	
 	mov eax, [screenList + edx + 8]
 	mov [@@platforms], eax
@@ -140,12 +145,7 @@ PROC checkCollision
 	
 	cld
 	
-	; the platforms are in an array called platform. the pointer to the nth platform is stored in [@@ground]
-	mov edx, [mario.currentScreen]
-	dec edx
-	mov eax, 16
-	mul edx
-	mov edx, eax
+	screen_pointer_offset
 	
 	mov eax, [screenList + edx + 8]
 	mov [@@platforms], eax
@@ -277,11 +277,7 @@ PROC collision
 	
 	mov ebx, [@@o_char]
 	
-	mov edx, [ebx + character.currentScreen]
-	dec edx
-	mov eax, 16
-	mul edx
-	mov edx, eax
+	screen_pointer_offset
 	
 	mov eax, [screenList + edx + 8]
 	mov [@@platforms], eax
