@@ -31,6 +31,7 @@ STRUC character
 	in_the_air 		dd -1	; mario currently in the air? (-1 if yes, 0 if not)
 	currentPlatform dd 0	; offset to current platform
 	currentScreen 	dd 1	; current screen mario is on, default is the first 
+	dead			dd 0	; 0 if not dead, 1 if dead
 ENDS character
 
 STRUC screen
@@ -135,6 +136,45 @@ PROC checkCharCollision
 @@nocol:
 	ret
 ENDP checkCharCollision
+
+PROC checkBarrelHit
+	ARG @@o_barrel: dword
+	USES eax, ebx, ecx
+	
+	mov eax, [@@o_barrel]
+	mov ebx, [mario.x]
+	add ebx, [mario.w]
+	mov ecx, [eax + character.x]
+	cmp ebx, ecx
+	jl @@noHit
+	mov ebx, [eax + character.x]
+	add ebx, [eax + character.w]
+	mov ecx, [mario.x]
+	cmp ebx, ecx
+	jl @@noHit
+	
+@@checkY:
+	mov ebx, [mario.y]
+	add ebx, [mario.h]
+	mov ecx, [eax + character.y]
+	cmp ebx, ecx
+	jl @@noHit
+	mov ebx, [eax + character.y]
+	add ebx, [eax + character.h]
+	mov ecx, [mario.y]
+	cmp ebx, ecx
+	jl @@noHit
+	
+@@overlap:
+	mov [mario.dead], 1
+	jmp @@endProcedure
+	
+@@noHit:
+	mov [mario.dead], 0
+	
+@@endProcedure:
+	ret
+ENDP checkBarrelHit
 
 PROC checkCollision
 	ARG @@n: dword
@@ -589,11 +629,17 @@ noUp:
 	add [mario.y], edx
 	
 	screen_pointer_offset
+	; ecx contains the number of barrels, ebx the barrellist
 	mov ecx, [screenList + edx + 8] 
 	mov ebx, [screenList + edx + 20] 
 	
 barrel_update:
 	mov eax, [ebx + 4*ecx - 4]
+	
+	call checkBarrelHit, eax
+	cmp [mario.dead], 1
+	je dead
+	
 	mov edx, [eax + character.speed_x]
 	add [eax + character.x], edx
 	mov edx, [eax + character.speed_y]
@@ -641,6 +687,7 @@ dead:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset dead_message
 	call wait_VBLANK, 60
+	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 won:
@@ -668,9 +715,8 @@ DATASEG
 
 	ladder1 newPlatform <254,130,264,130,20,65h>
 	ladder2 newPlatform <60,68,70,68,20,65h>
-	ladder3 newPlatform <152,65,162,65,20,65h>
-	ladder4 newPlatform <290,0,300,0,20,65h>
-	ladder5 newPlatform <50,130,60,130,20,65h>
+	ladder3 newPlatform <290,0,300,0,20,65h>
+	ladder4 newPlatform <50,130,60,130,20,65h>
 	
 	barrel1 character <-1,,,,,,,,>
 	barrel2 character <-1,,,,,,,,>
@@ -681,14 +727,14 @@ DATASEG
 	
 ; BELANGRIJK: ladderList moet juist na platformList komen
 	platformList1 dd ground1,ground2,ground3
-	ladderList1 dd ladder1,ladder2,ladder3,ladder4
+	ladderList1 dd ladder1,ladder2,ladder3
 	barrelList1 dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
 	
 	platformList2 dd ground4, ground5, ground6
-	ladderList2 dd ladder5
+	ladderList2 dd ladder4
 	
 	; het eerste getal is het aantal platformen, het tweede het aantal ladders en het derde het aantal tonnen
-	screenList 	dd 3, 4, 6, platformList1, ladderList1, barrelList1
+	screenList 	dd 3, 3, 6, platformList1, ladderList1, barrelList1
 				dd 3, 1, 6, platformList2, ladderList2, barrelList1
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
