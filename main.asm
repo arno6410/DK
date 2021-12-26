@@ -32,49 +32,52 @@ STRUC character
 	color 			dd 33h	; color
 	in_the_air 		dd -1	; mario currently in the air? (-1 if yes, 0 if not)
 	currentPlatform dd 0	; offset to current platform
+	currentScreen 	dd 1	; current screen mario is on, default is the first 
 ENDS character
 
-
-
-STRUC barrel
-	x				dd 0		; x position
-	y				dd 0		; y position
-	speed_x			dd 0		; x speedcomponent
-	speed_y			dd 0		; y speedcomponent
-	w				dd 0		; width
-	h 				dd 0		; height
-	color 			dd 0		; color
-ENDS barrel
+STRUC screen
+	platforms 		dd platformList1		; array with platforms
+	ladders			dd ladderList1		; array with ladders
+ENDS screen
 
 PROC drawPlatforms
-	USES eax, ebx, ecx
+	LOCAL @@platforms: dword, @@ladders: dword
+	USES eax, ebx, ecx, edx
 	
-	mov ecx, NUMOFL
+	mov edx, [mario.currentScreen]
+	dec edx
+	mov eax, 8
+	mul edx
+	mov edx, eax
+	
+	mov eax, [screenList + edx + 8]
+	mov [@@platforms], eax
+	mov eax, [screenList + edx + 12]
+	mov [@@ladders], eax
+	
+	mov ecx, [screenList + edx + 4]
 @@drawLadderLoop:
-	mov eax, [ladderList + 4*ecx-4]
+	mov edx, [@@ladders]
+	mov eax, [edx + 4*ecx-4]
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
 	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
 	loop @@drawLadderLoop
 	
-	mov ecx, NUMOFPF
+	mov edx, [mario.currentScreen]
+	dec edx
+	mov eax, 8
+	mul edx
+	mov edx, eax
+	mov ecx, [screenList + edx]
 @@drawPlatformLoop:
-	mov eax, [platformList + 4*ecx - 4]
+	mov edx, [@@platforms]
+	mov eax, [edx + 4*ecx - 4]
 	call platform_both, [eax + newPlatform.x0], [eax + newPlatform.y0], [eax + newPlatform.x1], [eax + newPlatform.y1], [eax + newPlatform.h], [eax + newPlatform.color]
 	loop @@drawPlatformLoop
 	
 	ret
 ENDP drawPlatforms
-
-PROC scrollUp
-	ARG @@n: dword
-	USES ebx
-	mov ebx, [@@n]
-	sub [mario.y], ebx
-;	sub [ground2.y], ebx
-;	sub [ground3.y], ebx
-;	sub [ground4.y], ebx
-ENDP scrollUp
 
 PROC checkCharCollision
 	ARG @@o_char: dword, @@o_pf: dword
@@ -132,15 +135,27 @@ ENDP checkCharCollision
 
 PROC checkCollision
 	ARG @@n: dword
-	LOCAL @@ground: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
-	USES eax, ebx
+	LOCAL @@ground: dword, @@platforms: dword, @@ladders: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+	USES eax, ebx, edx
 	
 	cld
 	
-	; the platforms are in an array called platforms. the pointer to the nth platform is stored in [@@ground]
+	; the platforms are in an array called platform. the pointer to the nth platform is stored in [@@ground]
+	mov edx, [mario.currentScreen]
+	dec edx
+	mov eax, 16
+	mul edx
+	mov edx, eax
+	
+	mov eax, [screenList + edx + 8]
+	mov [@@platforms], eax
+	mov eax, [screenList + edx + 12]
+	mov [@@ladders], eax
+	
 	mov eax, [@@n]
 	dec eax
-	mov ebx, [offset platformList + 4*eax]
+	mov edx, [@@platforms]
+	mov ebx, [edx + 4*eax]
 	mov [@@ground], ebx
 	
 	mov ebx, [@@ground]
@@ -257,28 +272,45 @@ ENDP x_collision
 
 PROC collision
 	ARG @@o_char: dword
-	USES eax, ebx, ecx
+	LOCAL @@platforms: dword
+	USES eax, ebx, ecx, edx
 	
 	mov ebx, [@@o_char]
+	
+	mov edx, [ebx + character.currentScreen]
+	dec edx
+	mov eax, 16
+	mul edx
+	mov edx, eax
+	
+	mov eax, [screenList + edx + 8]
+	mov [@@platforms], eax
 	
 ; check for collision
 	; if mario is in the air, currentPlatform can change
 	; by increasing ecx, we make sure the ladders are also included
-	mov ecx, NUMOFPF + NUMOFL
+	; ecx is the number of platforms + number of ladders
+	mov ecx, [screenList + edx]
+	add ecx, [screenList + edx + 4]
 	cmp [ebx + character.in_the_air], -1
 	je @@checkAllGrounds
 	
 	call checkCharCollision, ebx, [ebx + character.currentPlatform]
 @@checkX_collisionLoop:
-	call x_collision, ebx, [platformList + 4*ecx-4]
+
+	mov edx, [@@platforms]
+	mov eax, [edx + 4*ecx - 4]
+	call x_collision, ebx, eax
 	loop @@checkX_collisionLoop
 	jmp @@rest
 	
 @@checkAllGrounds:
+	mov edx, [@@platforms]
 	mov [ebx + character.currentPlatform], 0
-	call checkCharCollision, ebx, [platformList + 4*ecx-4]
+	mov eax, [edx + 4*ecx-4]
+	call checkCharCollision, ebx, eax
 	mov eax, [ebx + character.currentPlatform]
-	cmp eax, [platformList + 4*ecx - 4]
+	cmp eax, [edx + 4*ecx - 4]
 	je @@rest
 	loop @@checkAllGrounds
 	
@@ -394,7 +426,7 @@ menuloop:
 	mov ebx, [offset __keyb_keyboardState + 1Fh] ;S
 	cmp ebx, 1
 	je downmenu
-	jmp checkKeypresses
+	jmp SHORT checkKeypresses
 	
 upmenu:
 	pop ebx
@@ -442,6 +474,7 @@ newgame:
 	mov [mario.speed_y], 0
 	mov [mario.in_the_air], -1
 	mov [mario.currentPlatform], 0
+	mov [mario.currentScreen], 1
 	
 	call resetBarrel, offset barrel1
 	
@@ -612,13 +645,19 @@ DATASEG
 	ground3 newPlatform <50,58,295,50,10,25h>
 ;	ground4 newPlatform <40,60,295,50,10,25h>
 ; BELANGRIJK: ladderList moet juist na platformlist komen
-	platformList dd ground1,ground2,ground3
-	ladderList dd ladder1,ladder2,ladder4,ladder5
+	; platformList dd ground1,ground2,ground3
+	; ladderList dd ladder1,ladder2,ladder4,ladder5
 	ladder1 newPlatform <254,130,264,130,20,65h>
 	ladder2 newPlatform <60,68,70,68,20,65h>
 ;	ladder3 newPlatform <100,130,110,130,20,65h>
 	ladder4 newPlatform <152,65,162,65,20,65h>
 	ladder5 newPlatform <290,0,300,0,20,65h>
+; BELANGRIJK: ladderList1 moet juist na platformlist komen
+	platformList1 dd ground1,ground2,ground3
+	ladderList1 dd ladder1,ladder2,ladder4,ladder5
+	
+	; het eerste getal is het aantal platformen en het tweede het aantal ladders
+	screenList dd 3, 4, platformList1, ladderList1
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
 				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h 
