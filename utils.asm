@@ -45,36 +45,6 @@ PROC terminateProcess
 	ret
 ENDP terminateProcess
 
-PROC UInt_str
- 	ARG @@number: dword, @@addr: dword
- 	USES eax, ebx, ecx, edx
- 	
- 	; the number to be printed
- 	mov eax, [@@number]
- 	mov ebx, 10
- 	xor ecx, ecx
- 	
- @@getNextDigit:
- 	inc ecx
- 	xor edx, edx
- 	div ebx
- 	push dx
- 	test eax, eax
- 	jnz @@getNextDigit
- 	
- 	cmp ecx, 10000
- 	jge @@finish
- 	mov ebx, ecx
- 	mov edi, [@@addr]
- @@printDigits:
- 	pop ax
- 	add al, '0'
- 	stosb
- 	loop @@printDigits
- @@finish:
- 	ret
- ENDP UInt_str
-
 PROC displayString
 	ARG @@row:dword, @@column:dword, @@offset:dword
 	USES eax, ebx, edx
@@ -99,9 +69,6 @@ PROC drawSprite
 	mov eax, [@@y]
 	cmp eax, 0
 	jl @@finish
-;	add eax, [@@h]
-;	cmp eax, SCRHEIGHT
-;	jg @@finish
 	
 	mov edi, VMEMADR 			; start of video memory
 	add edi, [@@x]

@@ -33,11 +33,6 @@ STRUC character
 	dead			dd 0	; 0 if not dead, 1 if dead
 ENDS character
 
-STRUC screen
-	platforms 		dd platformList1		; array with platforms
-	ladders			dd ladderList1		; array with ladders
-ENDS screen
-
 ; macro that calculates the offset to the current screen in screenList
 MACRO screen_pointer_offset
 	mov edx, [mario.currentScreen]
@@ -124,7 +119,7 @@ PROC checkCharCollision
 	ret
 	
 @@in_the_air:
-	; om te checken of mario echt in de lucht is, kijken we of er collision zou zijn als we mario enkele pixels naar beneden zouden verschuiven
+	; to check if mario really is in the air, we check if there would be collision if we shift mario down a few pixels
 	mov [ebx + character.in_the_air], 0
 	mov eax, [ebx + character.y]
 	add eax, 2
@@ -222,7 +217,6 @@ checkX:
 	cmp eax, ebx
 	jge noXOverlap
 xOverlap:
-;	mov [mario.x_overlapping], 1
 	jmp checkY
 noXOverlap:
 	jmp endProcedure
@@ -239,14 +233,9 @@ checkY:
 	cmp eax, ebx
 	jge noYOverlap
 yOverlap:	
-;	mov [mario.y_overlapping], 1
 	jmp endProcedure
 noYOverlap:
-;	mov [mario.y_overlapping], 0
-;	mov [mario.x_overlapping], 0
 	jmp endProcedure
-outOfBounds:
-;	mov [mario.x_overlapping], 1
 endProcedure:	
 	ret
 ENDP checkCollision
@@ -360,7 +349,7 @@ PROC resetBarrels
 	
 	mov eax, [screenList + edx + 20]
 	mov [@@barrels], eax
-	; move the number of barrels to ecx
+	; store the number of barrels in ecx
 	mov ecx, [screenList + edx + 8]
 	
 @@barrelLoop:
@@ -392,7 +381,6 @@ PROC resetBarrel
 	
 	ret
 ENDP resetBarrel
-
 
 PROC drawBarrels
 	USES eax, ebx, ecx, edx
@@ -436,7 +424,7 @@ PROC updateBarrelSpeed
 	mov [ecx + character.speed_x], -B_SPEED
 @@finish:
 	ret
-ENDP
+ENDP updateBarrelSpeed
 
 PROC main
 	sti
@@ -449,14 +437,12 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 mainMenu:
-	
-;	call fillRect,0,0,320,200,0h
 	call displayString, 2, 2, offset game_title
 	call drawRectangle,232,48,80,26,35h
 	call displayString, 7, 30, offset msg1
 	call displayString, 17, 30, offset msg2	
-	call drawRectangle,15,124,122,61, 0fh
-	call fillRect, 21, 124,69,1,0h
+	call drawRectangle,15,124,122,61,0fh
+	call fillRect,21,124,69,1,0h
 	call displayString, 15, 3, offset controls
 	call displayString, 17, 3, offset msgControlsLeft
 	call displayString, 18, 3, offset msgControlsRight
@@ -508,8 +494,6 @@ checkKeypresses:
 	jmp newgame ; jump to the main game loop
 	
 checkEsc:
-;	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
-; TODO: dit opkuisen
 	mov ebx, 0
 	cmp ebx, 1
 	jne menuloop
@@ -621,7 +605,7 @@ noRight:
 	mov [mario.in_the_air], -1
 	
 noUp:
-	; check dat y niet > SCRHEIGHT -> anders dood
+	; check that y isn't > SCRHEIGHT -> otherwise jump to dead
 	cmp [mario.y], SCRHEIGHT
 	jg dead
 	
@@ -732,7 +716,7 @@ DATASEG
 	barrel5 character <-1,,,,,,,,>
 	barrel6 character <-1,,,,,,,,>
 	
-; BELANGRIJK: ladderList moet juist na platformList komen
+; IMPORTANT: ladderList has to come immediately after platformList
 	platformList1 dd ground1,ground2,ground3
 	ladderList1 dd ladder1,ladder2,ladder3
 	barrelList1 dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
@@ -740,7 +724,7 @@ DATASEG
 	platformList2 dd ground4, ground5, ground6
 	ladderList2 dd ladder4
 	
-	; het eerste getal is het aantal platformen, het tweede het aantal ladders en het derde het aantal tonnen
+	; number of platforms, number of ladders, number of barrels, ...
 	screenList 	dd 3, 3, 6, platformList1, ladderList1, barrelList1
 				dd 3, 1, 6, platformList2, ladderList2, barrelList1
 	
