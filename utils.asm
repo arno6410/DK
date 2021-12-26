@@ -69,9 +69,6 @@ PROC drawSprite
 	mov eax, [@@y]
 	cmp eax, 0
 	jl @@finish
-;	add eax, [@@h]
-;	cmp eax, SCRHEIGHT
-;	jg @@finish
 	
 	mov edi, VMEMADR 			; start of video memory
 	add edi, [@@x]

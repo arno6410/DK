@@ -10,7 +10,6 @@ FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
 JUMP EQU 6			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
-NUMOFB EQU 6		; number of barrels
 B_SPEED EQU 4		; barrel speed_x
 B_TIMER EQU 64*6	; how long before all barrels are added
 
@@ -33,11 +32,6 @@ STRUC character
 	currentScreen 	dd 1	; current screen mario is on, default is the first 
 	dead			dd 0	; 0 if not dead, 1 if dead
 ENDS character
-
-STRUC screen
-	platforms 		dd platformList1		; array with platforms
-	ladders			dd ladderList1		; array with ladders
-ENDS screen
 
 ; macro that calculates the offset to the current screen in screenList
 MACRO screen_pointer_offset
@@ -66,7 +60,8 @@ PROC drawPlatforms
 	mov eax, [edx + 4*ecx-4]
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
-	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+	;call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+	call drawSprite, offset laddersprite, [eax + newPlatform.x0], [eax + newPlatform.y0], 10, 50
 	loop @@drawLadderLoop
 	
 	mov edx, [mario.currentScreen]
@@ -125,7 +120,7 @@ PROC checkCharCollision
 	ret
 	
 @@in_the_air:
-	; om te checken of mario echt in de lucht is, kijken we of er collision zou zijn als we mario enkele pixels naar beneden zouden verschuiven
+	; to check if mario really is in the air, we check if there would be collision if we shift mario down a few pixels
 	mov [ebx + character.in_the_air], 0
 	mov eax, [ebx + character.y]
 	add eax, 2
@@ -177,6 +172,75 @@ PROC checkBarrelHit
 @@endProcedure:
 	ret
 ENDP checkBarrelHit
+
+;PROC checkCollision
+;	ARG @@n: dword
+;	LOCAL @@ground: dword, @@platforms: dword, @@ladders: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
+;	USES eax, ebx, edx
+;	
+;	cld
+;	
+;	screen_pointer_offset
+;	
+;	mov eax, [screenList + edx + 12]
+;	mov [@@platforms], eax
+;	mov eax, [screenList + edx + 16]
+;	mov [@@ladders], eax
+;	
+;	mov eax, [@@n]
+;	dec eax
+;	mov edx, [@@platforms]
+;	mov ebx, [edx + 4*eax]
+;	mov [@@ground], ebx
+;	
+;	mov ebx, [@@ground]
+;	mov eax, [ebx+platform.x]
+;	mov [@@x0], eax
+;	
+;	mov eax, [ebx+platform.y]
+;	mov [@@y0], eax
+;	
+;	mov eax, [ebx+platform.w]
+;	mov [@@w], eax
+;	
+;	mov eax, [ebx+platform.h]
+;	mov [@@h], eax
+;
+;checkX:
+;	mov eax, [@@x0]
+;	mov ebx, [mario.x]
+;	add ebx, [mario.w]
+;	cmp eax, ebx			; checks for overlap 
+;	jge noXOverlap			; with blocks
+;	
+;	mov eax, [mario.x]
+;	mov ebx, [@@x0]
+;	add ebx, [@@w]
+;	cmp eax, ebx
+;	jge noXOverlap
+;xOverlap:
+;	jmp checkY
+;noXOverlap:
+;	jmp endProcedure
+;checkY:
+;	mov eax, [@@y0]
+;	mov ebx, [mario.y]
+;	add ebx, [mario.h]
+;	cmp eax, ebx
+;	jge noYOverlap
+;	
+;	mov eax, [mario.y]
+;	mov ebx, [@@y0]
+;	add ebx, [@@h]
+;	cmp eax, ebx
+;	jge noYOverlap
+;yOverlap:	
+;	jmp endProcedure
+;noYOverlap:
+;	jmp endProcedure
+;endProcedure:	
+;	ret
+;ENDP checkCollision
 
 ; if no x_col -> nothing happens
 ; if x_col -> char.x gets moved so that there's no more overlap
@@ -288,7 +352,7 @@ PROC resetBarrels
 	
 	mov eax, [screenList + edx + 20]
 	mov [@@barrels], eax
-	; move the number of barrels to ecx
+	; store the number of barrels in ecx
 	mov ecx, [screenList + edx + 8]
 	
 @@barrelLoop:
@@ -320,7 +384,6 @@ PROC resetBarrel
 	
 	ret
 ENDP resetBarrel
-
 
 PROC drawBarrels
 	USES eax, ebx, ecx, edx
@@ -364,7 +427,7 @@ PROC updateBarrelSpeed
 	mov [ecx + character.speed_x], -B_SPEED
 @@finish:
 	ret
-ENDP
+ENDP updateBarrelSpeed
 
 PROC main
 	sti
@@ -377,14 +440,12 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 mainMenu:
-	
-;	call fillRect,0,0,320,200,0h
 	call displayString, 2, 2, offset game_title
 	call drawRectangle,232,48,80,26,35h
 	call displayString, 7, 30, offset msg1
 	call displayString, 17, 30, offset msg2	
-	call drawRectangle,15,124,122,61, 0fh
-	call fillRect, 21, 124,69,1,0h
+	call drawRectangle,15,124,122,61,0fh
+	call fillRect,21,124,69,1,0h
 	call displayString, 15, 3, offset controls
 	call displayString, 17, 3, offset msgControlsLeft
 	call displayString, 18, 3, offset msgControlsRight
@@ -436,8 +497,6 @@ checkKeypresses:
 	jmp newgame ; jump to the main game loop
 	
 checkEsc:
-;	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
-; TODO: dit opkuisen
 	mov ebx, 0
 	cmp ebx, 1
 	jne menuloop
@@ -552,7 +611,7 @@ noRight:
 	mov [mario.in_the_air], -1
 	
 noUp:
-	; check dat y niet > SCRHEIGHT -> anders dood
+	; check that y isn't > SCRHEIGHT -> otherwise jump to dead
 	cmp [mario.y], SCRHEIGHT
 	jg dead
 	
@@ -583,6 +642,7 @@ barrel_update:
 	add [eax + character.y], edx
 	loop barrel_update
 	
+	call drawPlatforms
 	cmp [mario.speed_x], 0
 	jl drawLeft
 	call drawSprite, offset mariospriteright, [mario.x], [mario.y], [mario.w], [mario.h]
@@ -593,7 +653,7 @@ drawLeft:
 	
 skipLeft:
 	call drawBarrels
-	call drawPlatforms
+	
 	
 	call wait_VBLANK, 3
 	; undraw mario
@@ -663,7 +723,7 @@ DATASEG
 	barrel5 character <-1,,,,,,,,>
 	barrel6 character <-1,,,,,,,,>
 	
-; BELANGRIJK: ladderList moet juist na platformList komen
+; IMPORTANT: ladderList has to come immediately after platformList
 	platformList1 dd ground1,ground2,ground3
 	ladderList1 dd ladder1,ladder2,ladder3
 	barrelList1 dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
@@ -671,7 +731,7 @@ DATASEG
 	platformList2 dd ground4, ground5, ground6
 	ladderList2 dd ladder4
 	
-	; het eerste getal is het aantal platformen, het tweede het aantal ladders en het derde het aantal tonnen
+	; number of platforms, number of ladders, number of barrels, ...
 	screenList 	dd 3, 3, 6, platformList1, ladderList1, barrelList1
 				dd 3, 1, 6, platformList2, ladderList2, barrelList1
 	
@@ -724,7 +784,59 @@ DATASEG
 	msgControlsUp		db "Z: UP/JUMP", 13, 10, '$'
 	msgControlsDown		db "S: DOWN", 13, 10, '$'
 	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
+	
 	game_title			db "DINKOY KING", 13, 10,'$'
+	
+	laddersprite 	dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
 
 UDATASEG
 	
