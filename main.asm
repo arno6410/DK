@@ -10,7 +10,6 @@ FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
 JUMP EQU 6			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
-NUMOFB EQU 6		; number of barrels
 B_SPEED EQU 4		; barrel speed_x
 B_TIMER EQU 64*6	; how long before all barrels are added
 
@@ -65,7 +64,8 @@ PROC drawPlatforms
 	mov eax, [edx + 4*ecx-4]
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
-	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+	;call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+	call drawSprite, offset laddersprite, [eax + newPlatform.x0], [eax + newPlatform.y0], 10, 50
 	loop @@drawLadderLoop
 	
 	mov edx, [mario.currentScreen]
@@ -652,6 +652,7 @@ barrel_update:
 	add [eax + character.y], edx
 	loop barrel_update
 	
+	call drawPlatforms
 	cmp [mario.speed_x], 0
 	jl drawLeft
 	call drawSprite, offset mariospriteright, [mario.x], [mario.y], [mario.w], [mario.h]
@@ -662,7 +663,7 @@ drawLeft:
 	
 skipLeft:
 	call drawBarrels
-	call drawPlatforms
+	
 	
 	call wait_VBLANK, 3
 	; undraw mario and the barrels
@@ -814,6 +815,57 @@ DATASEG
 	msgControlsDown		db "S: DOWN", 13, 10, '$'
 	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
 	game_title			db "(soort van) DONKEY KONG", 13, 10,'$'
+	
+	laddersprite 	dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
+				dd 4Dh, 4Dh, 00h, 00h, 00h, 00h, 00h, 00h, 4Dh, 4Dh
 
 UDATASEG
 	
