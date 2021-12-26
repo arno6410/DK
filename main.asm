@@ -10,8 +10,6 @@ FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
 JUMP EQU 6			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
-NUMOFPF EQU 3		; number of platforms
-NUMOFL EQU 4		; number of ladders
 NUMOFB EQU 6		; number of barrels
 B_SPEED EQU 4		; barrel speed_x
 B_TIMER EQU 64*6	; how long before all barrels are added
@@ -44,7 +42,7 @@ ENDS screen
 MACRO screen_pointer_offset
 	mov edx, [mario.currentScreen]
 	dec edx
-	mov eax, 16
+	mov eax, 24  			; 4 * 6 because there are 6 parameters per screen in screenList
 	mul edx
 	mov edx, eax
 ENDM screen_pointer_offset
@@ -55,9 +53,9 @@ PROC drawPlatforms
 	
 	screen_pointer_offset
 	
-	mov eax, [screenList + edx + 8]
-	mov [@@platforms], eax
 	mov eax, [screenList + edx + 12]
+	mov [@@platforms], eax
+	mov eax, [screenList + edx + 16]
 	mov [@@ladders], eax
 	
 	mov ecx, [screenList + edx + 4]
@@ -147,9 +145,9 @@ PROC checkCollision
 	
 	screen_pointer_offset
 	
-	mov eax, [screenList + edx + 8]
-	mov [@@platforms], eax
 	mov eax, [screenList + edx + 12]
+	mov [@@platforms], eax
+	mov eax, [screenList + edx + 16]
 	mov [@@ladders], eax
 	
 	mov eax, [@@n]
@@ -279,7 +277,7 @@ PROC collision
 	
 	screen_pointer_offset
 	
-	mov eax, [screenList + edx + 8]
+	mov eax, [screenList + edx + 12]
 	mov [@@platforms], eax
 	
 ; check for collision
@@ -319,7 +317,7 @@ PROC resetBarrels
 	
 	mov ecx, NUMOFB
 @@barrelLoop:
-	mov eax, [barrelList + 4*ecx - 4]
+	mov eax, [barrelList1 + 4*ecx - 4]
 	cmp [eax + character.y], SCRHEIGHT
 	jg @@reset_barrel
 	loop @@barrelLoop
@@ -353,7 +351,7 @@ PROC drawBarrels
 	
 	xor ecx, ecx
 @@drawLoop:
-	mov eax, [barrelList + 4*ecx]
+	mov eax, [barrelList1 + 4*ecx]
 	cmp [eax + character.x], -1
 	je @@dont_draw
 	call drawSprite, offset barrelsprite, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h]
@@ -491,7 +489,7 @@ barrelLoop:
 	shl eax, 6
 	cmp edx, eax
 	jne donothing
-	call resetBarrel, [barrelList + 4*ecx]
+	call resetBarrel, [barrelList1 + 4*ecx]
 donothing:
 	loop barrelLoop
 	
@@ -566,7 +564,7 @@ noUp:
 	
 	mov ecx, NUMOFB
 barrel_update:
-	mov eax, [barrelList + 4*ecx - 4]
+	mov eax, [barrelList1 + 4*ecx - 4]
 	mov edx, [eax + character.speed_x]
 	add [eax + character.x], edx
 	mov edx, [eax + character.speed_y]
@@ -595,7 +593,7 @@ skipLeft:
 	call collision, offset mario
 	mov ecx, NUMOFB
 barrel_gravity:
-	mov eax, [barrelList + 4*ecx - 4]
+	mov eax, [barrelList1 + 4*ecx - 4]
 	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
 	inc [eax + character.speed_y]
 	call collision, eax
@@ -634,7 +632,7 @@ DATASEG
 	barrel4 character <-1,,,,,,,,>
 	barrel5 character <-1,,,,,,,,>
 	barrel6 character <-1,,,,,,,,>
-	barrelList dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
+	barrelList1 dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
 	
 	ground1 newPlatform <25,180,295,170,10,25h>
 	ground2 newPlatform <25,110,270,120,10,25h>
@@ -652,8 +650,8 @@ DATASEG
 	platformList1 dd ground1,ground2,ground3
 	ladderList1 dd ladder1,ladder2,ladder4,ladder5
 	
-	; het eerste getal is het aantal platformen en het tweede het aantal ladders
-	screenList dd 3, 4, platformList1, ladderList1
+	; het eerste getal is het aantal platformen, het tweede het aantal ladders en het derde het aantal tonnen
+	screenList dd 3, 4, 6, platformList1, ladderList1, barrelList1
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
 				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h 
