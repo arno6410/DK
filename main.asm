@@ -45,7 +45,6 @@ PROC drawPlatforms
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
 	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
-;	call drawSprite, offset laddersprite, [eax + newPlatform.x0], [eax + newPlatform.y0], 10, 50
 	loop @@drawLadderLoop
 	
 	mov ecx, NUMOFPF
@@ -538,7 +537,6 @@ skipLeft:
 	mov ecx, NUMOFB
 barrel_gravity:
 	mov eax, [barrelList + 4*ecx - 4]
-	
 	; undraw the barrel
 	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
 	; gravity
@@ -557,14 +555,12 @@ dead:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset dead_message
 	call wait_VBLANK, 60
-;	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 won:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset won_message
 	call wait_VBLANK, 60
-;	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 exit:
