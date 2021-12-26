@@ -313,11 +313,19 @@ PROC collision
 ENDP collision
 
 PROC resetBarrels
-	USES eax, ecx
+	LOCAL @@barrels: dword
+	USES eax, ecx, edx
 	
-	mov ecx, NUMOFB
+	screen_pointer_offset
+	
+	mov eax, [screenList + edx + 20]
+	mov [@@barrels], eax
+	; move the number of barrels to ecx
+	mov ecx, [screenList + edx + 8]
+	
 @@barrelLoop:
-	mov eax, [barrelList1 + 4*ecx - 4]
+	mov edx, [@@barrels]
+	mov eax, [edx + 4*ecx - 4]
 	cmp [eax + character.y], SCRHEIGHT
 	jg @@reset_barrel
 	loop @@barrelLoop
@@ -347,17 +355,22 @@ ENDP resetBarrel
 
 
 PROC drawBarrels
-	USES eax, ecx
+	USES eax, ebx, ecx, edx
+	
+	screen_pointer_offset
+	
+	; store barrellist in ebx
+	mov ebx, [screenList + edx + 20]
 	
 	xor ecx, ecx
 @@drawLoop:
-	mov eax, [barrelList1 + 4*ecx]
+	mov eax, [ebx + 4*ecx]
 	cmp [eax + character.x], -1
 	je @@dont_draw
 	call drawSprite, offset barrelsprite, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h]
 @@dont_draw:
 	inc ecx
-	cmp ecx, NUMOFB
+	cmp ecx, [screenList + edx + 8]
 	jl @@drawLoop
 	
 	ret
@@ -483,13 +496,26 @@ mainloop:
 	
 	cmp edx, B_TIMER
 	jg noNewBarrel
-	mov ecx, NUMOFB-1
+	
+	; store number of barrels - 1 in ecx
+	push edx
+	screen_pointer_offset
+	mov ecx, [screenList + edx + 8] 
+	dec ecx
+	pop edx
+	
 barrelLoop:
 	mov eax, ecx
 	shl eax, 6
 	cmp edx, eax
 	jne donothing
-	call resetBarrel, [barrelList1 + 4*ecx]
+	
+	push edx
+	screen_pointer_offset
+	mov eax, [screenList + edx + 20] 
+	pop edx	
+	mov ebx, [eax+ 4*ecx]
+	call resetBarrel, ebx
 donothing:
 	loop barrelLoop
 	
@@ -562,9 +588,12 @@ noUp:
 	mov edx, [mario.speed_y]
 	add [mario.y], edx
 	
-	mov ecx, NUMOFB
+	screen_pointer_offset
+	mov ecx, [screenList + edx + 8] 
+	mov ebx, [screenList + edx + 20] 
+	
 barrel_update:
-	mov eax, [barrelList1 + 4*ecx - 4]
+	mov eax, [ebx + 4*ecx - 4]
 	mov edx, [eax + character.speed_x]
 	add [eax + character.x], edx
 	mov edx, [eax + character.speed_y]
@@ -591,9 +620,11 @@ skipLeft:
 	; gravity
 	inc [mario.speed_y]
 	call collision, offset mario
-	mov ecx, NUMOFB
+	screen_pointer_offset
+	mov ecx, [screenList + edx + 8] 
+	mov ebx, [screenList + edx + 20] 
 barrel_gravity:
-	mov eax, [barrelList1 + 4*ecx - 4]
+	mov eax, [ebx + 4*ecx - 4]
 	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
 	inc [eax + character.speed_y]
 	call collision, eax
@@ -616,6 +647,7 @@ won:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset won_message
 	call wait_VBLANK, 60
+	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 exit:
@@ -626,32 +658,38 @@ ENDP main
 
 DATASEG
 	mario character <>
+	
+	ground1 newPlatform <25,180,295,170,10,25h>
+	ground2 newPlatform <25,110,270,120,10,25h>
+	ground3 newPlatform <50,58,295,50,10,25h>
+	ground4 newPlatform <25,175,285,180,10,25h>
+	ground5 newPlatform <50,120,150,110,10,25h>
+	ground6 newPlatform <185,120,295,110,10,25h>
+
+	ladder1 newPlatform <254,130,264,130,20,65h>
+	ladder2 newPlatform <60,68,70,68,20,65h>
+	ladder3 newPlatform <152,65,162,65,20,65h>
+	ladder4 newPlatform <290,0,300,0,20,65h>
+	ladder5 newPlatform <50,130,60,130,20,65h>
+	
 	barrel1 character <-1,,,,,,,,>
 	barrel2 character <-1,,,,,,,,>
 	barrel3 character <-1,,,,,,,,>
 	barrel4 character <-1,,,,,,,,>
 	barrel5 character <-1,,,,,,,,>
 	barrel6 character <-1,,,,,,,,>
+	
+; BELANGRIJK: ladderList moet juist na platformList komen
+	platformList1 dd ground1,ground2,ground3
+	ladderList1 dd ladder1,ladder2,ladder3,ladder4
 	barrelList1 dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
 	
-	ground1 newPlatform <25,180,295,170,10,25h>
-	ground2 newPlatform <25,110,270,120,10,25h>
-	ground3 newPlatform <50,58,295,50,10,25h>
-;	ground4 newPlatform <40,60,295,50,10,25h>
-; BELANGRIJK: ladderList moet juist na platformlist komen
-	; platformList dd ground1,ground2,ground3
-	; ladderList dd ladder1,ladder2,ladder4,ladder5
-	ladder1 newPlatform <254,130,264,130,20,65h>
-	ladder2 newPlatform <60,68,70,68,20,65h>
-;	ladder3 newPlatform <100,130,110,130,20,65h>
-	ladder4 newPlatform <152,65,162,65,20,65h>
-	ladder5 newPlatform <290,0,300,0,20,65h>
-; BELANGRIJK: ladderList1 moet juist na platformlist komen
-	platformList1 dd ground1,ground2,ground3
-	ladderList1 dd ladder1,ladder2,ladder4,ladder5
+	platformList2 dd ground4, ground5, ground6
+	ladderList2 dd ladder5
 	
 	; het eerste getal is het aantal platformen, het tweede het aantal ladders en het derde het aantal tonnen
-	screenList dd 3, 4, 6, platformList1, ladderList1, barrelList1
+	screenList 	dd 3, 4, 6, platformList1, ladderList1, barrelList1
+				dd 3, 1, 6, platformList2, ladderList2, barrelList1
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
 				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h 
