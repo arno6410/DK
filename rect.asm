@@ -372,19 +372,8 @@ PROC collision_down
 	ret
 ENDP collision_down
 
-; Draws the 'fixed' rect
-PROC drawRects
-	call fillRect, [rect1.x], [rect1.y], [rect1.w], [rect1.h], 25h
-	call fillRect, [rect2.x], [rect2.y], [rect2.w], [rect2.h], 25h
-	
-	ret
-ENDP drawRects
-
 DATASEG
-	; the 'fixed' rects
-	rect1 rect <30, 170, SCRWIDTH-30, 10>
-	rect2 rect <0, 120, SCRWIDTH-30, 10> 
-	
+
 STACK 100h
 
 END

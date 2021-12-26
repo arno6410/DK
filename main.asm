@@ -48,6 +48,7 @@ MACRO screen_pointer_offset
 	mov edx, eax
 ENDM screen_pointer_offset
 
+; draw the platforms and ladders
 PROC drawPlatforms
 	LOCAL @@platforms: dword, @@ladders: dword
 	USES eax, ebx, ecx, edx
@@ -137,6 +138,7 @@ PROC checkCharCollision
 	ret
 ENDP checkCharCollision
 
+; check whether mario and the given barrel overlap
 PROC checkBarrelHit
 	ARG @@o_barrel: dword
 	USES eax, ebx, ecx
@@ -175,81 +177,6 @@ PROC checkBarrelHit
 @@endProcedure:
 	ret
 ENDP checkBarrelHit
-
-PROC checkCollision
-	ARG @@n: dword
-	LOCAL @@ground: dword, @@platforms: dword, @@ladders: dword, @@x0: dword, @@y0: dword, @@w: dword, @@h: dword
-	USES eax, ebx, edx
-	
-	cld
-	
-	screen_pointer_offset
-	
-	mov eax, [screenList + edx + 12]
-	mov [@@platforms], eax
-	mov eax, [screenList + edx + 16]
-	mov [@@ladders], eax
-	
-	mov eax, [@@n]
-	dec eax
-	mov edx, [@@platforms]
-	mov ebx, [edx + 4*eax]
-	mov [@@ground], ebx
-	
-	mov ebx, [@@ground]
-	mov eax, [ebx+platform.x]
-	mov [@@x0], eax
-	
-	mov eax, [ebx+platform.y]
-	mov [@@y0], eax
-	
-	mov eax, [ebx+platform.w]
-	mov [@@w], eax
-	
-	mov eax, [ebx+platform.h]
-	mov [@@h], eax
-
-checkX:
-	mov eax, [@@x0]
-	mov ebx, [mario.x]
-	add ebx, [mario.w]
-	cmp eax, ebx			; checks for overlap 
-	jge noXOverlap			; with blocks
-	
-	mov eax, [mario.x]
-	mov ebx, [@@x0]
-	add ebx, [@@w]
-	cmp eax, ebx
-	jge noXOverlap
-xOverlap:
-;	mov [mario.x_overlapping], 1
-	jmp checkY
-noXOverlap:
-	jmp endProcedure
-checkY:
-	mov eax, [@@y0]
-	mov ebx, [mario.y]
-	add ebx, [mario.h]
-	cmp eax, ebx
-	jge noYOverlap
-	
-	mov eax, [mario.y]
-	mov ebx, [@@y0]
-	add ebx, [@@h]
-	cmp eax, ebx
-	jge noYOverlap
-yOverlap:	
-;	mov [mario.y_overlapping], 1
-	jmp endProcedure
-noYOverlap:
-;	mov [mario.y_overlapping], 0
-;	mov [mario.x_overlapping], 0
-	jmp endProcedure
-outOfBounds:
-;	mov [mario.x_overlapping], 1
-endProcedure:	
-	ret
-ENDP checkCollision
 
 ; if no x_col -> nothing happens
 ; if x_col -> char.x gets moved so that there's no more overlap
@@ -352,6 +279,7 @@ PROC collision
 	ret
 ENDP collision
 
+; this procedure resets the barrels only when their y-coordinate > scrheight, i.e. they fell out of the screen
 PROC resetBarrels
 	LOCAL @@barrels: dword
 	USES eax, ecx, edx
@@ -524,6 +452,8 @@ newgame:
 	mov [mario.currentPlatform], 0
 	mov [mario.currentScreen], 1
 	
+	; make the initial values of the barrels -1, so that they don't get drawn
+	; they get drawn with the timing procedure in mainloop
 	mov [barrel2.x], -1
 	mov [barrel3.x], -1
 	mov [barrel4.x], -1
@@ -551,6 +481,7 @@ mainloop:
 	pop edx
 	
 barrelLoop:
+	; draw each additional barrel after 64 frames
 	mov eax, ecx
 	shl eax, 6
 	cmp edx, eax
@@ -665,19 +596,20 @@ skipLeft:
 	call drawPlatforms
 	
 	call wait_VBLANK, 3
-	; undraw mario and the barrels
+	; undraw mario
 	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 0h	
-	
-	
 	; gravity
 	inc [mario.speed_y]
 	call collision, offset mario
+	
 	screen_pointer_offset
 	mov ecx, [screenList + edx + 8] 
 	mov ebx, [screenList + edx + 20] 
 barrel_gravity:
 	mov eax, [ebx + 4*ecx - 4]
+	; undraw the barrel
 	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
+	; gravity
 	inc [eax + character.speed_y]
 	call collision, eax
 	call updateBarrelSpeed, eax
@@ -693,14 +625,14 @@ dead:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset dead_message
 	call wait_VBLANK, 60
-	call fillRect, 0, 0, 320, 200, 0h
+;	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 won:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset won_message
 	call wait_VBLANK, 60
-	call fillRect, 0, 0, 320, 200, 0h
+;	call fillRect, 0, 0, 320, 200, 0h
 	jmp mainMenu
 	
 exit:
@@ -763,27 +695,6 @@ DATASEG
 				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h
 				db 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
 				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
-	
-	mariospriteleft db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h
-				db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h 
-				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h 
-				db 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h 
-				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
-				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h 
-				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h
-				db 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h 
-				db 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h
-				db 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
-				db 00h, 00h, 00h, 00h, 00h, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 00h, 00h, 00h, 00h, 00h
-				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
-				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h
-				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
-				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
-				db 5Ah, 5Ah, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah, 5Ah
-				db 00h, 5Ah, 5Ah, 5Ah, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 5Ah, 5Ah, 5Ah
-				db 00h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
-				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 00h, 48h, 48h, 48h, 48h, 00h, 00h
-				db 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h, 48h, 48h, 48h, 48h, 48h, 00h, 00h
 				
 	barrelsprite 	db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
 					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
@@ -802,7 +713,7 @@ DATASEG
 					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
 					db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
 	
-	dead_message db "ded.",13,10,'$'
+	dead_message db "You died.",13,10,'$'
 	won_message db "You won!",13,10,'$'
 
 	msg1 	db "New Game", 13, 10, '$'
@@ -813,7 +724,7 @@ DATASEG
 	msgControlsUp		db "Z: UP/JUMP", 13, 10, '$'
 	msgControlsDown		db "S: DOWN", 13, 10, '$'
 	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
-	game_title			db "(soort van) DONKEY KONG", 13, 10,'$'
+	game_title			db "DINKOY KING", 13, 10,'$'
 
 UDATASEG
 	
