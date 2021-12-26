@@ -9,9 +9,12 @@ SCRHEIGHT EQU 200	; screen height
 FRAMESIZE EQU 256	; mario size (16x16)
 KEYCNT EQU 89		; number of keys to track
 SPEED EQU 4			; mario's speed 
-JUMP EQU 5			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
+JUMP EQU 6			; initial vertical speed in a jump; total jump height is JUMP*(JUMP-1)/2
 NUMOFPF EQU 3		; number of platforms
-NUMOFL EQU 5		; number of ladders
+NUMOFL EQU 4		; number of ladders
+NUMOFB EQU 6		; number of barrels
+B_SPEED EQU 4		; barrel speed_x
+B_TIMER EQU 64*6	; how long before all barrels are added
 
 CODESEG
 
@@ -27,7 +30,7 @@ STRUC character
 	w				dd 16	; width
 	h 				dd 20	; height
 	color 			dd 33h	; color
-	in_the_air 		dd 0	; mario currently in the air? (-1 if yes, 0 if not)
+	in_the_air 		dd -1	; mario currently in the air? (-1 if yes, 0 if not)
 	currentPlatform dd 0	; offset to current platform
 ENDS character
 
@@ -283,6 +286,79 @@ PROC collision
 	ret
 ENDP collision
 
+PROC resetBarrels
+	USES eax, ecx
+	
+	mov ecx, NUMOFB
+@@barrelLoop:
+	mov eax, [barrelList + 4*ecx - 4]
+	cmp [eax + character.y], SCRHEIGHT
+	jg @@reset_barrel
+	loop @@barrelLoop
+	ret
+@@reset_barrel:
+	call resetBarrel, eax
+	loop @@barrelLoop
+	
+	ret
+ENDP resetBarrels
+
+PROC resetBarrel
+	ARG @@o_barrel: dword
+	USES eax
+	
+	mov eax, [@@o_barrel]
+	mov [eax + character.x], 250
+	mov [eax + character.y], -16
+	mov [eax + character.speed_x], 0
+	mov [eax + character.speed_y], 0
+	mov [eax + character.h], 16
+	mov [eax + character.in_the_air], -1
+	mov [eax + character.currentPlatform], 0
+	
+	ret
+ENDP resetBarrel
+
+
+PROC drawBarrels
+	USES eax, ecx
+	
+	xor ecx, ecx
+@@drawLoop:
+	mov eax, [barrelList + 4*ecx]
+	cmp [eax + character.x], -1
+	je @@dont_draw
+	call drawSprite, offset barrelsprite, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h]
+@@dont_draw:
+	inc ecx
+	cmp ecx, NUMOFB
+	jl @@drawLoop
+	
+	ret
+ENDP drawBarrels
+
+PROC updateBarrelSpeed
+	ARG @@o_barrel: dword
+	USES eax, ebx, ecx
+	
+	mov ecx, [@@o_barrel]
+	; whether the barrel goes right or left depends on the slope of the current platform
+	; reset speed_x -> the barrel doesn't move horizontally while in the air
+	mov [ecx + character.speed_x], 0
+	cmp [ecx + character.in_the_air], -1
+	je @@finish
+	mov eax, [ecx + character.currentPlatform]
+	mov ebx, [eax + newPlatform.y1]
+	cmp ebx, [eax + newPlatform.y0]
+	jle @@downwards
+	mov [ecx + character.speed_x], B_SPEED
+	ret
+@@downwards:
+	mov [ecx + character.speed_x], -B_SPEED
+@@finish:
+	ret
+ENDP
+
 PROC main
 	sti
 	cld
@@ -294,15 +370,19 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 mainMenu:
-	call fillRect,0,0,320,200,0h
-	call drawRectangle,100,40,120,40,35h
-	call displayString, 7, 16, offset msg1
-	call displayString, 17, 18, offset msg2	
-	call displayString, 19, 2, offset msgControlsLeft
-	call displayString, 20, 2, offset msgControlsRight
-	call displayString, 21, 2, offset msgControlsUp
-	call displayString, 22, 2, offset msgControlsDown
-	call displayString, 23, 2, offset msgControlsEnter
+;	call fillRect,0,0,320,200,0h
+	call displayString, 2, 2, offset game_title
+	call drawRectangle,232,48,80,26,35h
+	call displayString, 7, 30, offset msg1
+	call displayString, 17, 30, offset msg2	
+	call drawRectangle,15,124,122,61, 0fh
+	call fillRect, 21, 124,69,1,0h
+	call displayString, 15, 3, offset controls
+	call displayString, 17, 3, offset msgControlsLeft
+	call displayString, 18, 3, offset msgControlsRight
+	call displayString, 19, 3, offset msgControlsUp
+	call displayString, 20, 3, offset msgControlsDown
+	call displayString, 21, 3, offset msgControlsEnter
 	
 	push 1 ; using the stack, 1 is the top button and 2 the bottom one
 	
@@ -321,8 +401,8 @@ upmenu:
 	cmp ebx, 1
 	je pushValue
 	mov ebx, 1
-	call drawRectangle,100,120,120,40,00h
-	call drawRectangle,100,40,120,40,35h
+	call drawRectangle,263,128,49,26,00h
+	call drawRectangle,232,48,80,26,35h
 	jmp pushValue
 	
 downmenu:
@@ -330,8 +410,8 @@ downmenu:
 	cmp ebx, 2
 	je pushValue
 	mov ebx, 2
-	call drawRectangle,100,40,120,40,00h
-	call drawRectangle,100,120,120,40,35h
+	call drawRectangle,232,48,80,26,00h
+	call drawRectangle,263,128,49,26,35h
 	
 pushValue:
 	push ebx
@@ -363,24 +443,34 @@ newgame:
 	mov [mario.in_the_air], -1
 	mov [mario.currentPlatform], 0
 	
-	mov [barrel1.x], 250
-	mov [barrel1.y], 20
-	mov [barrel1.speed_x], 0
-	mov [barrel1.speed_y], 0
-	mov [barrel1.h], 16
-	mov [barrel1.in_the_air], -1
-	mov [barrel1.currentPlatform], 0
+	call resetBarrel, offset barrel1
 	
 	call fillRect, 0, 0, 320, 200, 0h
 	
 	call drawPlatforms
 	
-	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
-	
-	mov ecx, 50
-	push ecx
+	push 0
 mainloop:
+	pop edx
+	inc edx
 	
+	cmp edx, B_TIMER
+	jg noNewBarrel
+	mov ecx, NUMOFB-1
+barrelLoop:
+	mov eax, ecx
+	shl eax, 6
+	cmp edx, eax
+	jne donothing
+	call resetBarrel, [barrelList + 4*ecx]
+donothing:
+	loop barrelLoop
+	
+noNewBarrel:
+	push edx
+	call resetBarrels
+	
+	call fillRect,0,0,320,200,0h
 	mov ebx, [offset __keyb_keyboardState + 01h] ;esc
 	cmp ebx, 1
 	je mainMenu
@@ -440,15 +530,19 @@ noUp:
 	jle won
 	
 	; draw and update mario
-	mov ecx, [mario.speed_x]
-	add [mario.x], ecx
+	mov edx, [mario.speed_x]
+	add [mario.x], edx
 	mov edx, [mario.speed_y]
 	add [mario.y], edx
 	
-	mov ecx, [barrel1.speed_x]
-	add [barrel1.x], ecx
-	mov ecx, [barrel1.speed_y]
-	add [barrel1.y], ecx
+	mov ecx, NUMOFB
+barrel_update:
+	mov eax, [barrelList + 4*ecx - 4]
+	mov edx, [eax + character.speed_x]
+	add [eax + character.x], edx
+	mov edx, [eax + character.speed_y]
+	add [eax + character.y], edx
+	loop barrel_update
 	
 	cmp [mario.speed_x], 0
 	jl drawLeft
@@ -459,41 +553,30 @@ drawLeft:
 	call drawSprite_mirrored, offset mariospriteright, [mario.x], [mario.y], [mario.w], [mario.h]
 	
 skipLeft:
-	call drawSprite, offset barrelsprite, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h]
+	call drawBarrels
 	call drawPlatforms
 	
 	call wait_VBLANK, 3
 	; undraw mario and the barrels
 	call fillRect, [mario.x], [mario.y], [mario.w], [mario.h], 0h	
-	call fillRect, [barrel1.x], [barrel1.y], [barrel1.w], [barrel1.h], 0h
+	
 	
 	; gravity
 	inc [mario.speed_y]
-	inc [barrel1.speed_y]
-
 	call collision, offset mario
-	call collision, offset barrel1
+	mov ecx, NUMOFB
+barrel_gravity:
+	mov eax, [barrelList + 4*ecx - 4]
+	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
+	inc [eax + character.speed_y]
+	call collision, eax
+	call updateBarrelSpeed, eax
+	loop barrel_gravity
 	
 rest:
 	; reset mario's speed_x
 	mov [mario.speed_x], 0
 	
-	; whether the barrel goes right or left depends on the slope of the current platform
-	; reset speed_x -> the barrel doesn't move horizontally while in the air
-	mov [barrel1.speed_x], 0
-	cmp [barrel1.in_the_air], -1
-	je mainloop
-	mov eax, [barrel1.currentPlatform]
-	mov ebx, [eax + newPlatform.y1]
-	cmp ebx, [eax + newPlatform.y0]
-	jle downwards
-	mov [barrel1.speed_x], 3
-	jmp mainloop
-downwards:
-	mov [barrel1.speed_x], -3
-	
-	pop ecx
-	dec ecx
 	jmp mainloop
 	
 dead:
@@ -505,8 +588,6 @@ dead:
 won:
 	call fillRect, 0, 0, 320, 200, 0h
 	call displayString, 7, 2, offset won_message
-	call UInt_str, [score], offset score_message
-	call displayString, 8, 2, offset score_message
 	call wait_VBLANK, 60
 	jmp mainMenu
 	
@@ -518,18 +599,25 @@ ENDP main
 
 DATASEG
 	mario character <>
-	barrel1 character <>
+	barrel1 character <-1,,,,,,,,>
+	barrel2 character <-1,,,,,,,,>
+	barrel3 character <-1,,,,,,,,>
+	barrel4 character <-1,,,,,,,,>
+	barrel5 character <-1,,,,,,,,>
+	barrel6 character <-1,,,,,,,,>
+	barrelList dd barrel1,barrel2,barrel3,barrel4,barrel5,barrel6
+	
 	ground1 newPlatform <25,180,295,170,10,25h>
 	ground2 newPlatform <25,110,270,120,10,25h>
-	ground3 newPlatform <50,60,295,50,10,25h>
+	ground3 newPlatform <50,58,295,50,10,25h>
 ;	ground4 newPlatform <40,60,295,50,10,25h>
 ; BELANGRIJK: ladderList moet juist na platformlist komen
 	platformList dd ground1,ground2,ground3
-	ladderList dd ladder1,ladder2,ladder3,ladder4,ladder5
-	ladder1 newPlatform <250,130,260,130,20,65h>
-	ladder2 newPlatform <70,70,80,70,20,65h>
-	ladder3 newPlatform <100,130,110,130,20,65h>
-	ladder4 newPlatform <150,70,160,70,20,65h>
+	ladderList dd ladder1,ladder2,ladder4,ladder5
+	ladder1 newPlatform <254,130,264,130,20,65h>
+	ladder2 newPlatform <60,68,70,68,20,65h>
+;	ladder3 newPlatform <100,130,110,130,20,65h>
+	ladder4 newPlatform <152,65,162,65,20,65h>
 	ladder5 newPlatform <290,0,300,0,20,65h>
 	
 	mariospriteright db 00h, 00h, 00h, 00h, 00h, 48h, 48h, 48h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
@@ -590,29 +678,21 @@ DATASEG
 					db 00h, 00h, 40h, 40h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 42h, 40h, 40h, 00h, 00h
 					db 00h, 00h, 00h, 40h, 40h, 40h, 42h, 42h, 42h, 42h, 40h, 40h, 40h, 00h, 00h, 00h 
 					db 00h, 00h, 00h, 00h, 00h, 40h, 40h, 40h, 40h, 40h, 40h, 00h, 00h, 00h, 00h, 00h
-
-	openErrorMsg db "could not open file", 13, 10, '$'
-	readErrorMsg db "could not read data", 13, 10, '$'
-	closeErrorMsg db "error during file closing", 13, 10, '$'
 	
 	dead_message db "ded.",13,10,'$'
-	won_message db "yes",13,10,'$'
-	score dd 0
-	score_message db 0,0,0,0,0,0,0,'$'
+	won_message db "You won!",13,10,'$'
 
 	msg1 	db "New Game", 13, 10, '$'
-	msg2 	db "Exit", 13, 10, '$'
+	msg2 	db "    Exit", 13, 10, '$'
+	controls		db "Controls", 13, 10, '$'
 	msgControlsLeft		db "Q: LEFT", 13, 10, '$'
 	msgControlsRight	db "D: RIGHT", 13, 10, '$'
 	msgControlsUp		db "Z: UP/JUMP", 13, 10, '$'
 	msgControlsDown		db "S: DOWN", 13, 10, '$'
 	msgControlsEnter	db "ENTER: SELECT", 13, 10, '$'
+	game_title			db "(soort van) DONKEY KONG", 13, 10,'$'
 
-UDATASEG;
-	;filehandle dw ?
-	;packedframe db FRAMESIZE dup (?)
-	
-
+UDATASEG
 	
 STACK 100h
 

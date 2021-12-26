@@ -16,7 +16,7 @@ PROC setVideoMode
 	ARG @@mode: byte
 	USES eax
 
-	movzx ax,[@@mode]
+	movzx ax, [@@mode]
 	int 10h
 
 	ret
@@ -71,11 +71,7 @@ PROC UInt_str
  	add al, '0'
  	stosb
  	loop @@printDigits
- 	
  @@finish:
- 	mov [@@addr + ecx + 0], 13
- 	mov [@@addr + ecx + 1], 10
- 	
  	ret
  ENDP UInt_str
 
@@ -100,6 +96,13 @@ PROC drawSprite
 	ARG @@sprite: dword, @@x: dword, @@y: dword, @@w: dword, @@h:dword
 	USES eax, ebx, ecx, edx, edi
 	
+	mov eax, [@@y]
+	cmp eax, 0
+	jl @@finish
+;	add eax, [@@h]
+;	cmp eax, SCRHEIGHT
+;	jg @@finish
+	
 	mov edi, VMEMADR 			; start of video memory
 	add edi, [@@x]
 	mov eax, SCRWIDTH
@@ -119,7 +122,7 @@ PROC drawSprite
 	sub edi, [@@w]
 	dec edx
 	jnz @@nextRow
-	
+@@finish:
 	ret
 ENDP drawSprite
 
@@ -139,6 +142,8 @@ PROC drawSprite_mirrored
 	dec edi
 	mov ebx, [@@sprite] ; sprite address
 	mov edx, [@@h]
+	cmp edi, VMEMADR
+	jl @@finish
 	
 @@nextRow:
 	mov ecx, [@@w]				; sprite width	
@@ -152,6 +157,7 @@ PROC drawSprite_mirrored
 	dec edx
 	jnz @@nextRow
 	
+@@finish:
 	cld
 	ret
 ENDP drawSprite_mirrored
