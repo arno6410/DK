@@ -507,10 +507,13 @@ barrel_update:
 	cmp [mario.dead], 1
 	je dead
 	
+	cmp [eax + character.x], -1
+	je dont_update
 	mov edx, [eax + character.speed_x]
 	add [eax + character.x], edx
 	mov edx, [eax + character.speed_y]
 	add [eax + character.y], edx
+dont_update:
 	loop barrel_update
 	
 	call drawPlatforms
@@ -535,6 +538,7 @@ skipLeft:
 	mov ecx, NUMOFB
 barrel_gravity:
 	mov eax, [barrelList + 4*ecx - 4]
+	
 	; undraw the barrel
 	call fillRect, [eax + character.x], [eax + character.y], [eax + character.w], [eax + character.h], 0h
 	; gravity
