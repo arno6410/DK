@@ -60,8 +60,8 @@ PROC drawPlatforms
 	mov eax, [edx + 4*ecx-4]
 	mov ebx, [eax + newPlatform.x1]
 	sub ebx, [eax + newPlatform.x0]
-	;call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
-	call drawSprite, offset laddersprite, [eax + newPlatform.x0], [eax + newPlatform.y0], 10, 50
+	call fillRect, [eax + newPlatform.x0], [eax + newPlatform.y0], ebx, [eax + newPlatform.h], [eax + newPlatform.color]
+;	call drawSprite, offset laddersprite, [eax + newPlatform.x0], [eax + newPlatform.y0], 10, 50
 	loop @@drawLadderLoop
 	
 	mov edx, [mario.currentScreen]
