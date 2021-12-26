@@ -449,6 +449,7 @@ PROC main
 	call __keyb_installKeyboardHandler
 	
 mainMenu:
+	
 ;	call fillRect,0,0,320,200,0h
 	call displayString, 2, 2, offset game_title
 	call drawRectangle,232,48,80,26,35h
@@ -523,6 +524,11 @@ newgame:
 	mov [mario.currentPlatform], 0
 	mov [mario.currentScreen], 1
 	
+	mov [barrel2.x], -1
+	mov [barrel3.x], -1
+	mov [barrel4.x], -1
+	mov [barrel5.x], -1
+	mov [barrel6.x], -1
 	call resetBarrel, offset barrel1
 	
 	call fillRect, 0, 0, 320, 200, 0h
